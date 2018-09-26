@@ -388,7 +388,7 @@ public class KThread {
 	
 	public void run() {
 	    for (int i=0; i<5; i++) {
-		System.out.println("*** thread " + which + " looped "
+		System.out.println("*** Hello, sweet thread " + which + " looped "
 				   + i + " times");
 		currentThread.yield();
 	    }
