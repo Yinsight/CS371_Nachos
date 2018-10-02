@@ -133,7 +133,8 @@ public class HashTable {
     
     /*find an element from the hashtable based on key*/ 
     public int get(String key) throws Exception{
-    	int hash = Hash(key, debug_flag) / SIZE;
+    	// index should be calculated using hash % array size
+    	int hash = Hash(key, debug_flag) % SIZE;
     	if(hTable[hash].getKey() == null){
     		throw new HashTableException("Does not exist");
     	} else if(hTable[hash].getKey() == key){
@@ -158,8 +159,12 @@ public class HashTable {
     	} else if(hTable[hash].getKey() == key){
     		if(hTable[hash].getNext() != null){
     			hTable[hash] = hTable[hash].getNext();
+    			//decrement count because of deletion
+    			count --;
     		} else {
         		hTable[hash].setKey(null);
+        		// decrement count because of deletion
+        		count --;
     		}
     	} else {
     		KVPair temp = hTable[hash];
@@ -172,6 +177,9 @@ public class HashTable {
     	    		} else {
     	    			pred.setNext(null);
     	    		}
+    				// decrement count because of deletion
+    				count --;
+    				return;
     			}
     		}
     		throw new HashTableException("Not Found");
