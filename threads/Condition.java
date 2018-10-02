@@ -63,6 +63,9 @@ public class Condition {
 
 	waitQueue = new LinkedList<Semaphore>();
     }
+    
+    //Condition c = new Condition();
+    //c.sleep(); make current thread wait upon condition c.
 
     /**
      * Atomically release the associated lock and go to sleep on this condition
@@ -78,13 +81,16 @@ public class Condition {
      */
     public void sleep() {
 	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+	//whoever calls sleep has hold of the lock
 
-	Semaphore waiter = new Semaphore(0);
-	waitQueue.add(waiter);
+	Semaphore waiter = new Semaphore(0); //initialize semaphore with value 0, means will be blocked
+	waitQueue.add(waiter); //store every thread waiting on the condition, actually storing semaphores
 
-	conditionLock.release();
-	waiter.P();
-	conditionLock.acquire();	
+	conditionLock.release();//release monitor lock to let other things in
+	waiter.P(); //waiter.wait();  current thread will be blocked
+	conditionLock.acquire();//every function checks if have the monitor lock.
+	//in order to enter monitor again, must acquire monitor lock
+	//need to reacquire because give it up before
     }
 
     /**
@@ -92,10 +98,10 @@ public class Condition {
      * current thread must hold the associated lock.
      */
     public void wake() {
-	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+	Lib.assertTrue(conditionLock.isHeldByCurrentThread()); //Whoever calls wait is the only one in the monitor
 
-	if (!waitQueue.isEmpty())
-	    ((Semaphore) waitQueue.removeFirst()).V();
+	if (!waitQueue.isEmpty()) //check if wait queue is empty
+	    ((Semaphore) waitQueue.removeFirst()).V(); //if not, pop the first semaphore, V means signal();
     }
 
     /**
@@ -104,9 +110,10 @@ public class Condition {
      */
     public void wakeAll() {
 	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+	
 
 	while (!waitQueue.isEmpty())
-	    wake();
+	    wake(); //wake everyone up 
     }
 
     private Lock conditionLock;

@@ -1,219 +1,263 @@
 package nachos.threads;
 
-import nachos.machine.Lib;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
-/* This is a starting file to implement a concurrent hashtable (thread safe)
- * for CS 371, fall 2018.
- *
- * */
-
-/*Basic struct of key and value*/
-@SuppressWarnings("serial")
-class HashTableException extends Exception {
-	String err;
-	HashTableException(String s) {
-		err = s;
+public class HashTable {
+	
+	enum OperationType {
+		INSERT,
+		REMOVE,
+		QUERY
 	}
-}
 
-class KVPair {
-	private String k; 
-	private int v;
-	private KVPair next; //if two keys clash with the same hash, then they will be chained together in a list.
+	class ThreadOperation
+	{
+		int k;
+		OperationType op;
+		int result;
+	};
 
-	KVPair(String key, int value) {
-		k = key;
-		v = value;
-		next = null;
+	ThreadOperation getThreadOperation() {
+		return new ThreadOperation();
 	}
-	int getValue() {
-		return v;
-	}
-	String getKey() {
-		return k;
-	}
-	KVPair getNext() {
-		return next;
-	}
-	void setKey(String key) {
-		k = key;
-	}
-	void setValue(int value) {
-		v = value;
-	}
-	void setNext(KVPair n) {
-		next = n;
-	}
-}
 
-public class HashTable {	
-	private final static int SIZE = 256000;
-	private final static int FNV_OFFSET_BASIS = 0x811c9dc5;
-	private final static int FNV_PRIME = 0x01000193;
-	private boolean debug_flag; //if debug_flag is true, then simpleHash is the hash function, or the fnvHash is used.
-    private KVPair[] hTable;
-    private int count;
+	class Value {
+		int key;
+		int value;
+		Value next;
+	}
 
-    HashTable() {
-        hTable = new KVPair[SIZE];
-        for (int i = 0; i < SIZE; i++)
-                hTable[i] = new KVPair(null, 0);
-        count = 0;
-        debug_flag = false;
-    }
+	class Key {
+		Value values;
+		public Key() {
+			values = null;
+		}
+	}
 
-    HashTable(boolean flag) {
-        hTable = new KVPair[SIZE];
-        for (int i = 0; i < SIZE; i++)
-                hTable[i] = new KVPair(null, 0);
-        count = 0;
-        debug_flag = flag;
-    }
-    
-    /* Textbook hash function in practice
-     * You can safely assume it is correctly implemented.
-     * */
-    private int fnvHash(String key) {
-    	int h = FNV_OFFSET_BASIS;
-    	for(int i=0; i < key.length(); i++) {
-    		h *= FNV_PRIME;
-    		h ^= key.charAt(i);
-    	}
-    	return h;
-    }
-    
-    /*simple hash function based on the sum of all chars. the order of the chars does not make any difference
-     * which means "abc" and "cba" clash with the same hash value
-     * */
-    private int simpleHash(String key) {
-    	int h = 0;
-    	for(int i=0; i<key.length();i++){
-    		h += key.charAt(i);
-    	}
-    	return h;
-    }
-    
-    private int Hash(String key, boolean flag) {
-    	if(flag == true){
-    		return simpleHash(key);
-    	} else {
-    		return fnvHash(key);
-    	}
-    }
-    
-    private KVPair getTail(KVPair kv, String key) throws Exception {
-    	KVPair temp = kv;
-    	while(temp.getNext() != null) {
-    		temp = temp.getNext();
-    		if (temp.getKey() == key) {
-                throw new HashTableException("Duplicated Key");
-    		}
-    	}
-    	return temp;
-    }
-    
-    public int getCount() {
-    	return count;
-    }
-    
-    /*insert an element into the hashtable*/
-    public void put(String key, int v) throws Exception{
-          int hash = Hash(key, debug_flag) % SIZE;
-          if(hTable[hash].getKey() != null) {
-        	  if (hTable[hash].getKey() == key) {
-                  throw new HashTableException("Duplicated Key");
-        	  }
-        	  KVPair tail = getTail(hTable[hash], key);
-        	  tail.setNext(new KVPair(key, v)); 	  
-          }else {
-        	  hTable[hash]= new KVPair(key, v); 	  
-          }
-          count ++;
-    }
-    
-    /*find an element from the hashtable based on key*/ 
-    public int get(String key) throws Exception{
-    	// index should be calculated using hash % array size
-    	int hash = Hash(key, debug_flag) % SIZE;
-    	if(hTable[hash].getKey() == null){
-    		throw new HashTableException("Does not exist");
-    	} else if(hTable[hash].getKey() == key){
-    		return hTable[hash].getValue();
-    	} else {
-    		KVPair temp = hTable[hash];
-    		while(temp.getNext() != null) {
-    			temp = temp.getNext();
-    			if(temp.getKey() == key) {
-    				return temp.getValue();
-    			}
-    		}
-    		throw new HashTableException("Not Found");
-    	} 
-    }
-    
-    /*delete an element from the hashtable based on key*/
-    public void out(String key) throws Exception{
-    	int hash = Hash(key, debug_flag) % SIZE;
-    	if(hTable[hash].getKey() == null){
-    		throw new HashTableException("Does not exist");
-    	} else if(hTable[hash].getKey() == key){
-    		if(hTable[hash].getNext() != null){
-    			hTable[hash] = hTable[hash].getNext();
-    			//decrement count because of deletion
-    			count --;
-    		} else {
-        		hTable[hash].setKey(null);
-        		// decrement count because of deletion
-        		count --;
-    		}
-    	} else {
-    		KVPair temp = hTable[hash];
-    		while(temp.getNext() != null) {
-        		KVPair pred = temp;
-    			temp = temp.getNext();
-    			if(temp.getKey() == key) {
-    				if(temp.getNext() != null){
-    	        		pred.setNext(temp.getNext());
-    	    		} else {
-    	    			pred.setNext(null);
-    	    		}
-    				// decrement count because of deletion
-    				count --;
-    				return;
-    			}
-    		}
-    		throw new HashTableException("Not Found");
-    	} 
-    }
-    
-    public static void selfTest(){
-    	System.out.println("HashTable seftTest begins...");
-    	try {
-    		HashTable table = new HashTable();
-    		table.put("abc", 30);
-    		table.put("bcd", 32);
-    		table.put("cde", 34);
-    		Lib.assertTrue(table.get("abc") == 30);
-    		Lib.assertTrue(table.get("bcd") == 32);
-    		Lib.assertTrue(table.get("cde") == 34);
-    		Lib.assertTrue(table.getCount() == 3);
+	private int count;
+	private Key[] keys;
+	private final int lengthOfTable;
+	private ExecutorService pool;
+	public HashTable(int n) {
+		count = 0;
+		lengthOfTable = n;
+		keys = new Key[n];
+		
+		for (int i = 0; i < n; i++) {
+			keys[i] = new Key();
+		}
+		
+		pool = Executors.newCachedThreadPool();
 
-    		table.out("bcd");
-    		Lib.assertTrue(table.getCount() == 2);
+	}
 
-    		//turn on debug flag, use the simpleHash which tends to clash easily
-    		HashTable table2 = new HashTable(true);
-    		table2.put("abc", 30);
-    		table2.put("bca", 32);
-    		table2.put("cba", 34);
-    		//three clashed keys, delete one of them
-    		table2.out("bca");
-    		Lib.assertTrue(table2.get("abc") == 30);
-    		Lib.assertTrue(table2.get("cba") == 34);
-    		Lib.assertTrue(table2.getCount() == 2);
-        	System.out.println("HashTable seftTest completes!");
-    	} catch (Exception e) {
-    		System.out.println("Error in HashTable selfTest!"+e.toString());
-    	}
-    }
+	public int hash(int k) {
+		return k % lengthOfTable;
+	}
+
+	public void insert(int k, int val) {
+		System.out.println("insert");
+		int key = k;
+		k = hash(k);
+		
+		if (k < 0 || k >= lengthOfTable) {
+			System.err.println("wrong K");
+			return;
+		}
+		try {
+			Value tmpInsert = new Value();
+			tmpInsert.key = key;
+			tmpInsert.value = val;
+			tmpInsert.next = keys[k].values;
+			keys[k].values = tmpInsert;
+		} finally {
+			count++;
+		}
+	}
+
+	public void remove(int k) throws Exception {
+		System.out.println("remove");
+		int key = k;
+		k = hash(k);
+		
+		if (k < 0 || k >= lengthOfTable) {
+			System.err.println("wrong K");
+			throw new IllegalArgumentException("wrong K");
+		}
+		try {
+			Value head = keys[k].values;
+			if (head == null) {
+				throw new Exception("do not include the key");
+			}
+			if (head.key == key) {
+				head = head.next;
+				return;
+			}
+
+			Value before = head;
+			Value now = head.next;
+			
+			while (now != null) {
+				if (now.key == key) {
+					before.next = now.next;
+				}
+				
+				before = before.next;
+				now = now.next;
+			}
+			throw new Exception("do not include the key");
+			
+		} finally {
+
+		}
+
+	}
+
+	public int get(int k) throws Exception {
+		System.out.println("get");
+		int key = k;
+		k = hash(k);
+
+		if (k < 0 || k >= lengthOfTable) {
+			System.err.println("wrong K");
+			throw new IllegalArgumentException("wrong K");
+		}
+		try {
+			Value head = keys[k].values;
+			while (head != null) {
+				if (head.key == key) {
+					return head.value;
+				}
+				head = head.next;
+			}
+		} finally {
+
+		}
+		throw new Exception("do not include the key");
+
+	}
+
+	public int getbucketsize() {
+		return count;
+	}
+
+	public void batch(int n, ThreadOperation[] ops) {
+		
+		Future[] futures = new Future[n];
+		int i = 0;
+		
+		for (final ThreadOperation threadOperation : ops) {
+			switch (threadOperation.op) {
+			case INSERT:
+				futures[i++] = pool.submit(new Runnable() {
+					@Override
+					public void run() {
+						insert(threadOperation.k, threadOperation.result);
+					}
+
+				});
+
+				break;
+
+			case QUERY:
+
+				futures[i++] = pool.submit(new Runnable() {
+					
+					@Override
+					public void run() {
+						try {
+							threadOperation.result = get(threadOperation.k);
+							System.out.println(threadOperation.result);
+						} catch (Exception e) {
+							e.printStackTrace();
+						} finally {
+
+						}
+					}
+				});
+
+				break;
+
+			case REMOVE:
+
+				futures[i++] = pool.submit(new Runnable() {
+
+					@Override
+					public void run() {
+						try {
+							remove(threadOperation.k);
+						} catch (Exception e) {
+							e.printStackTrace();
+						} finally {
+
+						}
+					}
+				});
+				break;
+				
+			default:
+				
+				break;
+			}
+
+		}
+
+		try {
+			for (Future item : futures) {
+				if (item != null) {
+					item.get();
+				}
+			}
+
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		} finally {
+
+		}
+
+	}
+
+	public static void main(String[] args) {
+
+		HashTable table = new HashTable(10);
+		ThreadOperation[] ops = new ThreadOperation[5];
+		for (int i = 0; i < 5; i++) {
+			ops[i] = table.getThreadOperation();
+		}
+
+		ops[0].k = 11;
+		ops[0].op = OperationType.INSERT;
+		ops[0].result = 9;
+		ops[1].k = 13;
+		ops[1].op = OperationType.INSERT;
+		ops[1].result = 3;
+		ops[2].k = 14;
+		ops[2].op = OperationType.INSERT;
+		ops[2].result = 4;
+		ops[3].k = 24;
+		ops[3].op = OperationType.INSERT;
+		ops[3].result = 6;
+		ops[4].k = 24;
+		ops[4].op = OperationType.REMOVE;
+		ops[4].result = 1;
+		table.batch(5, ops);
+
+		ThreadOperation[] ops2 = new ThreadOperation[1];
+		ops2[0] = table.getThreadOperation();
+		ops2[0].k = 14;
+		ops2[0].op = OperationType.QUERY;
+		ops2[0].result = 9;
+		table.batch(1, ops2);
+		table.shutdown();
+	}
+
+	private void shutdown() {
+		pool.shutdownNow();
+	}
+
 }
