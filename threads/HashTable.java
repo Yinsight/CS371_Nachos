@@ -4,9 +4,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import nachos.threads.LinkedList;
+import nachos.threads.LinkedList.Node;
 
 public class HashTable {
-	
+
 	enum OperationType {
 		INSERT,
 		REMOVE,
@@ -24,34 +26,26 @@ public class HashTable {
 		return new ThreadOperation();
 	}
 
-	class Value {
-		int key;
-		int value;
-		Value next;
-	}
-
 	class Key {
-		Value values;
+		LinkedList list = new LinkedList(Integer.MIN_VALUE);
 		public Key() {
-			values = null;
 		}
 	}
-
+	
 	private int count;
-	private Key[] keys;
 	private final int lengthOfTable;
+	private Key[] keys;
 	private ExecutorService pool;
 	public HashTable(int n) {
+	
 		count = 0;
 		lengthOfTable = n;
 		keys = new Key[n];
-		
+
 		for (int i = 0; i < n; i++) {
 			keys[i] = new Key();
 		}
-		
 		pool = Executors.newCachedThreadPool();
-
 	}
 
 	public int hash(int k) {
@@ -59,26 +53,23 @@ public class HashTable {
 	}
 
 	public void insert(int k, int val) {
+
 		System.out.println("insert");
-		int key = k;
 		k = hash(k);
-		
 		if (k < 0 || k >= lengthOfTable) {
 			System.err.println("wrong K");
 			return;
 		}
 		try {
-			Value tmpInsert = new Value();
-			tmpInsert.key = key;
-			tmpInsert.value = val;
-			tmpInsert.next = keys[k].values;
-			keys[k].values = tmpInsert;
-		} finally {
+			keys[k].list.add(val);
 			count++;
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 	}
 
-	public void remove(int k) throws Exception {
+	public void remove(int k) {
+
 		System.out.println("remove");
 		int key = k;
 		k = hash(k);
@@ -87,36 +78,13 @@ public class HashTable {
 			System.err.println("wrong K");
 			throw new IllegalArgumentException("wrong K");
 		}
-		try {
-			Value head = keys[k].values;
-			if (head == null) {
-				throw new Exception("do not include the key");
-			}
-			if (head.key == key) {
-				head = head.next;
-				return;
-			}
 
-			Value before = head;
-			Value now = head.next;
-			
-			while (now != null) {
-				if (now.key == key) {
-					before.next = now.next;
-				}
-				
-				before = before.next;
-				now = now.next;
-			}
-			throw new Exception("do not include the key");
-			
-		} finally {
-
-		}
-
+		LinkedList list = keys[k].list;
+		list.remove(key);
 	}
 
 	public int get(int k) throws Exception {
+
 		System.out.println("get");
 		int key = k;
 		k = hash(k);
@@ -125,19 +93,11 @@ public class HashTable {
 			System.err.println("wrong K");
 			throw new IllegalArgumentException("wrong K");
 		}
-		try {
-			Value head = keys[k].values;
-			while (head != null) {
-				if (head.key == key) {
-					return head.value;
-				}
-				head = head.next;
-			}
-		} finally {
 
+		if (keys[k].list.findByValue(key) != -1) {
+			return key;
 		}
-		throw new Exception("do not include the key");
-
+		throw new IllegalArgumentException("wrong K");
 	}
 
 	public int getbucketsize() {
@@ -145,19 +105,19 @@ public class HashTable {
 	}
 
 	public void batch(int n, ThreadOperation[] ops) {
-		
+
 		Future[] futures = new Future[n];
 		int i = 0;
-		
+
 		for (final ThreadOperation threadOperation : ops) {
 			switch (threadOperation.op) {
 			case INSERT:
 				futures[i++] = pool.submit(new Runnable() {
+					
 					@Override
 					public void run() {
 						insert(threadOperation.k, threadOperation.result);
 					}
-
 				});
 
 				break;
@@ -165,7 +125,7 @@ public class HashTable {
 			case QUERY:
 
 				futures[i++] = pool.submit(new Runnable() {
-					
+
 					@Override
 					public void run() {
 						try {
@@ -196,19 +156,20 @@ public class HashTable {
 						}
 					}
 				});
+
 				break;
-				
+
 			default:
-				
+
 				break;
 			}
-
 		}
 
 		try {
 			for (Future item : futures) {
 				if (item != null) {
 					item.get();
+					System.out.println("---future.idDone()" + item.isDone());
 				}
 			}
 
@@ -219,13 +180,13 @@ public class HashTable {
 		} finally {
 
 		}
-
 	}
 
 	public static void main(String[] args) {
 
 		HashTable table = new HashTable(10);
 		ThreadOperation[] ops = new ThreadOperation[5];
+
 		for (int i = 0; i < 5; i++) {
 			ops[i] = table.getThreadOperation();
 		}
@@ -245,8 +206,7 @@ public class HashTable {
 		ops[4].k = 24;
 		ops[4].op = OperationType.REMOVE;
 		ops[4].result = 1;
-		table.batch(5, ops);
-
+		table.batch(5, ops);	
 		ThreadOperation[] ops2 = new ThreadOperation[1];
 		ops2[0] = table.getThreadOperation();
 		ops2[0].k = 14;
@@ -259,5 +219,4 @@ public class HashTable {
 	private void shutdown() {
 		pool.shutdownNow();
 	}
-
 }
