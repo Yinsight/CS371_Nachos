@@ -153,6 +153,7 @@ public class HashTable {
 			}
 		}
 		try {
+			//wait for every thread to complete
 			for (Future item : futures) {
 				if (item != null) {
 					item.get();

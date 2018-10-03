@@ -28,47 +28,45 @@ public class LinkedList {
 
 	public void add(int i) throws InterruptedException {
 
+		head.acquire();
 		Node pre = head;
 		Node now = head.next;
+		
 		while (now != null) {
 			pre = now;
 			now = now.next;
 		}
-
-		pre.sem.acquire();
+		
 		pre.next = new Node(i);
-		pre.sem.release();
-		sem.acquire();
 		numNodes++;
-		sem.release();
+		head.release();
 		
 	}
 
 	public void deleteAtIndex(int index) throws InterruptedException {
-
+		
+		head.acquire();
 		Node temp = head;
 		
 		for (int i = 0; i < index - 1 && temp.next != null; i++) {
 			temp = temp.next;
 		}
 
-		temp.sem.acquire();
 		temp.next = temp.next.next;
-		temp.sem.release();
-		sem.acquire();
 		numNodes--;
-		sem.release();
+		head.release();
 		
 	}
 
 	public int find(Node n) {
-
 		Node t = head;
 		int index = 0;
+		
 		while (t != null && t.data != n.data) {
 			index++;
 			t = t.next;
 		}
+		
 		return index;
 	}
 
@@ -81,45 +79,18 @@ public class LinkedList {
 		return index;
 	}
 
-	public Node find(int index) {
+	public int find(int index) {
 
 		head.acquire();
 		Node temp = head;
 		
 		for (int i = 0; i < index; i++) {
-
-			temp.next.acquire();
-			Node tempFortemp = temp;
-			temp = temp.next;
-			tempFortemp.release();
-			
+			temp = temp.next;	
 		}
-
-		temp.release();
-		return temp;
-
-	}
-
-	public void printList() {
-
-		Node temp = head;
 		
-		while (temp != null) {
-			System.out.println(temp.data);
-			temp = temp.next;
-		}
-	}
-
-	public int countList() {
-
-		int count = 0;
-		Node temp = head;
-		
-		while (temp != null) {
-			count++;
-			temp = temp.next;
-		}
-		return count - 1;
+		int tempvalue = temp.getData();
+		head.release();
+		return tempvalue;
 	}
 
 	public int getSize() {
