@@ -204,9 +204,9 @@ public class KThread {
      * delete this thread.
      */
     public static void finish() {
-	Lib.debug(dbgThread, "Finishing thread: " + currentThread.toString());
+		Lib.debug(dbgThread, "Finishing thread: " + currentThread.toString());
 	
-	Machine.interrupt().disable();
+	boolean intStatus = Machine.interrupt().disable();
 
 	Machine.autoGrader().finishingCurrentThread();
 
@@ -219,8 +219,11 @@ public class KThread {
 		currentThread.whoWaitsForMe.ready();
 		currentThread.whoWaitsForMe=null;
 		}
-	else
+	else{
 		sleep();
+	}
+	
+	Machine.interrupt().restore(intStatus);
     }
 
     /**
@@ -302,12 +305,13 @@ public class KThread {
 	Lib.debug(dbgThread, "Joining to thread: " + toString());
 
 	Lib.assertTrue(this != currentThread);
-	Machine.interrupt().disable();
+	boolean intStatus=Machine.interrupt().disable();
 	
 	if(this.status!=statusFinished){
 		this.whoWaitsForMe=currentThread;
-		currentThread.sleep();}
-	Machine.interrupt().enable();
+		currentThread.sleep();
+	}
+	Machine.interrupt().restore(intStatus);
 	
     }
 
