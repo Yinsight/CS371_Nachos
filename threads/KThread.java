@@ -128,6 +128,28 @@ public class KThread {
 	else
 	    return 0;
     }
+	 private static void joinTest1 () {
+    	KThread child1 = new KThread( new Runnable () {
+    		public void run() {
+    		    System.out.println("I (heart) Nachos!");
+    		}
+    	    });
+    	child1.setName("child1").fork();
+
+    	// We want the child to finish before we call join.  Although
+    	// our solutions to the problems cannot busy wait, our test
+    	// programs can!
+
+    	for (int i = 0; i < 5; i++) {
+    	    System.out.println ("busy...");
+    	    KThread.currentThread().yield();
+    	}
+
+    	child1.join();
+    	System.out.println("After joining, child1 should be finished.");
+    	System.out.println("is it? " + (child1.status == statusFinished));
+    	Lib.assertTrue((child1.status == statusFinished), " Expected child1 to be finished.");
+        }
 
     /**
      * Causes this thread to begin execution. The result is that two threads
@@ -193,8 +215,12 @@ public class KThread {
 
 
 	currentThread.status = statusFinished;
-	
-	sleep();
+	if(currentThread.whoWaitsForMe!=null){
+		currentThread.whoWaitsForMe.ready();
+		currentThread.whoWaitsForMe=null;
+		}
+	else
+		sleep();
     }
 
     /**
@@ -276,12 +302,12 @@ public class KThread {
 	Lib.debug(dbgThread, "Joining to thread: " + toString());
 
 	Lib.assertTrue(this != currentThread);
-
-	//A.join();
-	//B.join();
-	//need to keep a queue for A, so that A knows who is waiting
-	//for it to complete.
-	//Needs to keep a different queue for B.
+	Machine.interrupt().disable();
+	
+	if(this.status!=statusFinished){
+		this.whoWaitsForMe=currentThread;
+		currentThread.sleep();}
+	Machine.interrupt().enable();
 	
     }
 
