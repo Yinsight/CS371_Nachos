@@ -451,7 +451,7 @@ public class KThread {
     // Simple test for the situation where the child finishes before
     // the parent calls join on it.
     
-    private static void joinTest1 () {
+    /*private static void joinTest1 () {
 	KThread child1 = new KThread( new Runnable () {
 		public void run() {
 		    System.out.println("I (heart) Nachos!");
@@ -472,7 +472,7 @@ public class KThread {
 	System.out.println("After joining, child1 should be finished.");
 	System.out.println("is it? " + (child1.status == statusFinished));
 	Lib.assertTrue((child1.status == statusFinished), " Expected child1 to be finished.");
-    }
+    }*/
 
     private static final char dbgThread = 't';
 
