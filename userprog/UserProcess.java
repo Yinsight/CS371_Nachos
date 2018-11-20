@@ -25,10 +25,6 @@ public class UserProcess {
     public UserProcess() {
     	
     	
-    	
-    	
-    	
-    	
 	int numPhysPages = Machine.processor().getNumPhysPages();
 	pageTable = new TranslationEntry[numPhysPages];
 	for (int i=0; i<numPhysPages; i++)
@@ -373,7 +369,7 @@ public class UserProcess {
     }
     
     
-    int handleWrite(int handler, int bufAddr, int size){
+    private int handleWrite(int handler, int bufAddr, int size){
     	if(handler < 0 || handler > MAXFDS ||fds[handler]==null){
     		return -1; //do similar check in read
     	}
@@ -385,7 +381,7 @@ public class UserProcess {
     	OpenFile status = fds[handler].openFile;
     	byte [] kernelBuffer = new byte[size];
     	int actualSize = this.readVirtualMemory(bufAddr, kernelBuffer, 0, size);
-    	status.write(kernelBuffer, 0, actualSize);
+    	return status.write(kernelBuffer, 0, actualSize);
     }
 
     private int getNextAvailableFD(){
@@ -395,6 +391,16 @@ public class UserProcess {
     		}
     	}
 		return -1;
+    }
+    
+    private int handleOpen(){
+    	
+    }
+    private int handleRead(){
+    	
+    }
+    private int handleClose(){
+    	
     }
 
     private static final int
@@ -444,11 +450,13 @@ public class UserProcess {
 	case syscallCreate:
 		return handleCreate(a0);
 	case syscallWrite:
-		return handleWrite(a1, a2, a3); //???
-	    
-	    
-
-
+		return handleWrite(a0, a1, a2); 
+	case syscallOpen:
+		return handleOpen(a0);
+	case syscallRead:
+		return handleRead();
+	case syscallClose:
+		return handleClose();
 	default:
 	    Lib.debug(dbgProcess, "Unknown syscall " + syscall);
 	    Lib.assertNotReached("Unknown system call!");
@@ -515,7 +523,5 @@ public class UserProcess {
     //stdin stdout
     final static int STDIN = 0;
     final static int STDOUT = 1;
-    
-    
     
 }

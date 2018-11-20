@@ -2,16 +2,16 @@ package nachos.threads;
 
 public class BridgeCrossing {
 
-	private int n_of_cars_on_bridge = 0;
-	private int[] n_of_cars_waiting;
-	private int cur_dir = -1;
-	private Lock lock;
-	private Condition[] cv;
+	private static int n_of_cars_on_bridge = 0;
+	private static int[] n_of_cars_waiting;
+	private static int cur_dir = -1;
+	private static Lock lock;
+	private static Condition[] cv;
 	
 	
-	class Bridge{
+	static class Bridge{
 		
-		public boolean isSafe(int dir){
+		public static boolean isSafe(int dir){
 			if (cur_dir == -1) return true;
 			else if (cur_dir != dir) return false;
 				else if (n_of_cars_on_bridge < 3) return true;
@@ -28,7 +28,7 @@ public class BridgeCrossing {
 			n_of_cars_waiting[1] = 0;
 		}
 		
-		public void enter(int dir){
+		public static void enter(int dir){
 			lock.acquire();
 			n_of_cars_waiting[dir]++;
 			while (!isSafe(dir)){
@@ -39,13 +39,13 @@ public class BridgeCrossing {
 			cur_dir = dir;
 			lock.release();
 		}
-	}
-	public void cross(){
+	
+	public static void cross(){
 		lock.acquire();
-		System.out.println("Vehicle crossing in" + cur_dir + "direction.");
+		System.out.println("Vehicle crossing.");
 		lock.release();
 	}
-	public void exit(int dir){
+	public static void exit(int dir){
 		lock.acquire();
 		n_of_cars_on_bridge--;
 		if (n_of_cars_on_bridge == 0) cur_dir = -1;
@@ -53,4 +53,57 @@ public class BridgeCrossing {
 		if (n_of_cars_waiting[dir] > 0 ) cv[dir].wake();
 		lock.release();
 	}
+	}
+	
+	
+	class Vehicle {
+		
+		public void selfTest() {
+			
+		KThread array[] = new KThread[10];
+			
+		for(int i=0;i<10;i++){
+			
+			KThread Vehicle = new KThread(new Runnable(){
+			
+			public void run() {
+				
+				Bridge.enter(1);
+				Bridge.cross();
+				Bridge.exit(1);	
+			
+			}
+		}
+		);
+			array[i]=Vehicle;
+		}
+		
+		
+		KThread array1[] = new KThread[10];
+		
+		for(int i=0;i<10;i++){
+			
+			KThread Vehicle = new KThread(new Runnable(){
+			
+			public void run() {
+				
+				Bridge.enter(0);
+				Bridge.cross();
+				Bridge.exit(0);	
+			
+			}
+		}
+		);
+			array[i]=Vehicle;
+		}
+		
+		
+		for(int j=0;j<10;j++){
+			array[j].join();
+			array1[j].join();
+		}
+			
+		    }
+	}
 }
+
