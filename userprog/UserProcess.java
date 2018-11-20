@@ -23,10 +23,22 @@ public class UserProcess {
      * Allocate a new process.
      */
     public UserProcess() {
+    	
+    	
+    	
+    	
+    	
+    	
 	int numPhysPages = Machine.processor().getNumPhysPages();
 	pageTable = new TranslationEntry[numPhysPages];
 	for (int i=0; i<numPhysPages; i++)
 	    pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
+    
+    for(int i=0; i<MAXFDS; i++) {
+    	fds[i] = new FileDescriptor();  		
+    }
+    fds[STDIN].openFile = UserKernel.console.openForReading();
+    fds[STDOUT].openFile = UserKernel.console.openForWriting();
     }
     
     /**
@@ -345,7 +357,45 @@ public class UserProcess {
 	Lib.assertNotReached("Machine.halt() did not halt machine!");
 	return 0;
     }
+    
+    private int handleCreate(int addrToFileName) {
+    	//addrToFileName holds the virtual addr to the file name
+    	String fileName = this.readVirtualMemoryString(addrToFileName, MAXSTRLEN);
+    	OpenFile status = UserKernel.fileSystem.open(fileName,true);
+    	if(status == null){
+    		return -1;
+    	} else {
+    		int handle = this.getNextAvailableFD();
+    		fds[handle].fileName = fileName;
+    		fds[handle].openFile = status;
+    		return handle;
+    	}
+    }
+    
+    
+    int handleWrite(int handler, int bufAddr, int size){
+    	if(handler < 0 || handler > MAXFDS ||fds[handler]==null){
+    		return -1; //do similar check in read
+    	}
+    	if(size < 0) {
+    		return -1;
+    	} else if (size == 0){
+    		return 0;
+    	}
+    	OpenFile status = fds[handler].openFile;
+    	byte [] kernelBuffer = new byte[size];
+    	int actualSize = this.readVirtualMemory(bufAddr, kernelBuffer, 0, size);
+    	status.write(kernelBuffer, 0, actualSize);
+    }
 
+    private int getNextAvailableFD(){
+    	for (int i = 0; i< MAXFDS; i++){
+    		if (fds[i].fileName == null){
+    			return i;
+    		}
+    	}
+		return -1;
+    }
 
     private static final int
         syscallHalt = 0,
@@ -391,6 +441,12 @@ public class UserProcess {
 	switch (syscall) {
 	case syscallHalt:
 	    return handleHalt();
+	case syscallCreate:
+		return handleCreate(a0);
+	case syscallWrite:
+		return handleWrite(a1, a2, a3); //???
+	    
+	    
 
 
 	default:
@@ -446,4 +502,20 @@ public class UserProcess {
 	
     private static final int pageSize = Processor.pageSize;
     private static final char dbgProcess = 'a';
+    
+    final static int MAXFDS = 16;
+    final static int MAXSTRLEN = 256;
+    
+    class FileDescriptor {
+    	String fileName;
+    	OpenFile openFile;
+    }
+    
+    private FileDescriptor [] fds;
+    //stdin stdout
+    final static int STDIN = 0;
+    final static int STDOUT = 1;
+    
+    
+    
 }
