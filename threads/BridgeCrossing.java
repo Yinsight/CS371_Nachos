@@ -8,7 +8,6 @@ public class BridgeCrossing {
 	private static Lock lock;
 	private static Condition[] cv;
 	
-	
 	static class Bridge{
 		
 		public static boolean isSafe(int dir){
@@ -40,11 +39,12 @@ public class BridgeCrossing {
 			lock.release();
 		}
 	
-	public static void cross(){
+	public static void cross(int dir){
 		lock.acquire();
-		System.out.println("Vehicle crossing.");
+		System.out.println("Vehicle crossing dir" + dir);
 		lock.release();
 	}
+	
 	public static void exit(int dir){
 		lock.acquire();
 		n_of_cars_on_bridge--;
@@ -55,26 +55,25 @@ public class BridgeCrossing {
 	}
 	}
 	
-	
-	class Vehicle {
-		
-		public void selfTest() {
+		public static void selfTest() {
 			
 		KThread array[] = new KThread[10];
 			
 		for(int i=0;i<10;i++){
 			
 			KThread Vehicle = new KThread(new Runnable(){
-			
+				
+						
 			public void run() {
 				
 				Bridge.enter(1);
-				Bridge.cross();
+				Bridge.cross(1);
 				Bridge.exit(1);	
 			
 			}
 		}
 		);
+			Vehicle.fork();
 			array[i]=Vehicle;
 		}
 		
@@ -88,13 +87,15 @@ public class BridgeCrossing {
 			public void run() {
 				
 				Bridge.enter(0);
-				Bridge.cross();
+				Bridge.cross(0);
 				Bridge.exit(0);	
 			
 			}
+			
 		}
 		);
-			array[i]=Vehicle;
+			Vehicle.fork();
+			array1[i]=Vehicle;
 		}
 		
 		
@@ -105,5 +106,4 @@ public class BridgeCrossing {
 			
 		    }
 	}
-}
 

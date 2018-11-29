@@ -30,11 +30,13 @@ public class UserProcess {
 	for (int i=0; i<numPhysPages; i++)
 	    pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
     
-    for(int i=0; i<MAXFDS; i++) {
-    	fds[i] = new FileDescriptor();  		
-    }
-    fds[STDIN].openFile = UserKernel.console.openForReading();
-    fds[STDOUT].openFile = UserKernel.console.openForWriting();
+	fds = new FileDescriptor[MAXFDS];
+	
+	fds[STDIN].openFile = UserKernel.console.openForReading();
+	fds[STDIN].fileName = "stdin";
+	fds[STDOUT].openFile = UserKernel.console.openForWriting();
+	fds[STDOUT].fileName = "stdout";
+	
     }
     
     /**
@@ -354,55 +356,106 @@ public class UserProcess {
 	return 0;
     }
     
-    private int handleCreate(int addrToFileName) {
-    	//addrToFileName holds the virtual addr to the file name
-    	String fileName = this.readVirtualMemoryString(addrToFileName, MAXSTRLEN);
-    	OpenFile status = UserKernel.fileSystem.open(fileName,true);
-    	if(status == null){
+    private int handleCreate(int a0){
+    	String fileName = readVirtualMemoryString(a0, MAXSTRLEN);
+    	OpenFile OFStatus = UserKernel.fileSystem.open(fileName,true);
+    	if (OFStatus == null){
     		return -1;
-    	} else {
-    		int handle = this.getNextAvailableFD();
-    		fds[handle].fileName = fileName;
-    		fds[handle].openFile = status;
-    		return handle;
+    	}
+    	else {
+    		int handle = getNextAvailHandle();
+    		if (handle<0)
+    			return -1;
+    		else{
+    			fds[handle].fileName = fileName;
+    			fds[handle].openFile = OFStatus;
+    			return handle;
+    		}
     	}
     }
     
-    
-    private int handleWrite(int handler, int bufAddr, int size){
-    	if(handler < 0 || handler > MAXFDS ||fds[handler]==null){
-    		return -1; //do similar check in read
-    	}
-    	if(size < 0) {
-    		return -1;
-    	} else if (size == 0){
-    		return 0;
-    	}
-    	OpenFile status = fds[handler].openFile;
-    	byte [] kernelBuffer = new byte[size];
-    	int actualSize = this.readVirtualMemory(bufAddr, kernelBuffer, 0, size);
-    	return status.write(kernelBuffer, 0, actualSize);
-    }
-
-    private int getNextAvailableFD(){
-    	for (int i = 0; i< MAXFDS; i++){
+    private int getNextAvailHandle(){
+    	for (int i = 0; i < MAXFDS; i++){
     		if (fds[i].fileName == null){
     			return i;
     		}
     	}
-		return -1;
+    	return -1;
     }
     
-    private int handleOpen(){
+    private int handleWrite(int handle, int virtBuf, int size){
+    	if (handle < 0 || handle >= MAXFDS){
+    		return -1;
+    	}
+    	FileDescriptor fd = fds[handle];
+    	if (fd == null){
+    		return -1;
+    	}
+    	if (size < 0) {
+    		return -1;
+    	} else if (size == 0){
+    		return 0;
+    	}
+    	byte[] kernelBuffer = new byte[size];
+    	int actualSize = readVirtualMemory(virtBuf, kernelBuffer, 0, size);
+    	if (actualSize == -1){
+    		return -1;
+    	}
+    	if (fd.openFile == null){
+    		return -1;
+    	}
+    	actualSize = fd.openFile.write(kernelBuffer, 0, actualSize);
+    	if (actualSize < 0){
+    		return -1;
+    	}
+    	return actualSize;
+    }
+    
+    private int handleRead(int handle, int virtBuf, int size){
+    	if (handle < 0 || handle >= MAXFDS){
+    		return -1;
+    	}
+    	FileDescriptor fd = fds[handle];
+    	if (fd == null){
+    		return -1;
+    	}
+    	if (size < 0) {
+    		return -1;
+    	} else if (size == 0){
+    		return 0;
+    	}
+    	byte[] kernelBuffer = new byte[size];
+    	int actualSize;
+    	actualSize = fd.openFile.read(kernelBuffer, 0, size);
+    	if (actualSize < 0){
+    		return -1;
+    	}
+    	actualSize = writeVirtualMemory(virtBuf, kernelBuffer, 0, size);
+    	if (actualSize < 0){
+    		return -1;
+    	}
+    	return actualSize;
+    }
+    
+    /*
+    private int handleOpen(a0){
+    	if (handle == -1){
+    		return -1;
+    	}
     	
     }
-    private int handleRead(){
+    */
+    
+    /*
+    private int handleClose(a0){
+    	if (handle < 0 || handle >= MAXFDS){
+    		return -1;
+    	}
     	
     }
-    private int handleClose(){
-    	
-    }
-
+    */
+   
+   
     private static final int
         syscallHalt = 0,
 	syscallExit = 1,
@@ -443,6 +496,7 @@ public class UserProcess {
      * @param	a3	the fourth syscall argument.
      * @return	the value to be returned to the user.
      */
+    
     public int handleSyscall(int syscall, int a0, int a1, int a2, int a3) {
 	switch (syscall) {
 	case syscallHalt:
@@ -450,19 +504,21 @@ public class UserProcess {
 	case syscallCreate:
 		return handleCreate(a0);
 	case syscallWrite:
-		return handleWrite(a0, a1, a2); 
-	case syscallOpen:
-		return handleOpen(a0);
+		return handleWrite(a0,a1,a2);
+//	case syscallOpen:
+		//return handleOpen(a0);
 	case syscallRead:
-		return handleRead();
-	case syscallClose:
-		return handleClose();
+		return handleRead(a0,a1,a2);
+	//case syscallClose:
+		//return handleClose(a0);
+
 	default:
 	    Lib.debug(dbgProcess, "Unknown syscall " + syscall);
 	    Lib.assertNotReached("Unknown system call!");
 	}
 	return 0;
     }
+    
 
     /**
      * Handle a user exception. Called by
@@ -511,17 +567,17 @@ public class UserProcess {
     private static final int pageSize = Processor.pageSize;
     private static final char dbgProcess = 'a';
     
-    final static int MAXFDS = 16;
-    final static int MAXSTRLEN = 256;
+    public final static int MAXFDS = 16;
+    public final static int MAXSTRLEN = 256;
+    
+    public final static int STDIN = 0;
+    public final static int STDOUT = 1;
     
     class FileDescriptor {
     	String fileName;
     	OpenFile openFile;
     }
-    
-    private FileDescriptor [] fds;
-    //stdin stdout
-    final static int STDIN = 0;
-    final static int STDOUT = 1;
+ 
+    private FileDescriptor[] fds; 
     
 }
