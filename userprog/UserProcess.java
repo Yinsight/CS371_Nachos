@@ -31,12 +31,13 @@ public class UserProcess {
 	    pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
     
 	fds = new FileDescriptor[MAXFDS];
-	
+	for (int i = 0; i < MAXFDS; i++)
+		fds[i] = new FileDescriptor();			
 	fds[STDIN].openFile = UserKernel.console.openForReading();
 	fds[STDIN].fileName = "stdin";
 	fds[STDOUT].openFile = UserKernel.console.openForWriting();
 	fds[STDOUT].fileName = "stdout";
-	
+		
     }
     
     /**

@@ -2,11 +2,21 @@ package nachos.threads;
 
 public class BridgeCrossing {
 
-	private static int n_of_cars_on_bridge = 0;
-	private static int[] n_of_cars_waiting = new int [2];
-	private static int cur_dir = -1;
+	private static int n_of_cars_on_bridge;
+	private static int[] n_of_cars_waiting;
 	private static Lock lock = new Lock();
 	private static Condition[] cv;
+	static {
+	n_of_cars_on_bridge = 0;
+	n_of_cars_waiting = new int[2];
+	n_of_cars_waiting[0] = 0;
+	n_of_cars_waiting[1] = 0;
+	cv = new Condition[2];
+	cv[0] = new Condition(lock);
+	cv[1] = new Condition(lock);
+	}
+	private static int cur_dir = -1;
+	
 	
 	static class Bridge{
 		
@@ -17,15 +27,6 @@ public class BridgeCrossing {
 					else return false;
 		} 
 		
-		public Bridge(){
-			cv = new Condition[2];
-			cv[0] = new Condition(lock);
-			cv[1] = new Condition(lock);
-			
-			n_of_cars_waiting = new int[2];
-			n_of_cars_waiting[0] = 0;
-			n_of_cars_waiting[1] = 0;
-		}
 		
 		public static void enter(int dir){
 			lock.acquire();
