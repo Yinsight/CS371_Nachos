@@ -437,23 +437,44 @@ public class UserProcess {
     	return actualSize;
     }
     
-    /*
-    private int handleOpen(a0){
-    	if (handle == -1){
+    
+    private int handleOpen(int a0){
+    	
+    	String fileName = readVirtualMemoryString(a0, MAXSTRLEN);
+    	if (fileName == null){
     		return -1;
     	}
-    	
+    	OpenFile OFStatus = UserKernel.fileSystem.open(fileName,false);
+    	if (OFStatus == null){
+    		return -1;
+    	} else {
+    		int handle = getNextAvailHandle();
+    		if (handle<0)
+    			return -1;
+    		else{
+    			fds[handle].fileName = fileName;
+    			fds[handle].openFile = OFStatus;
+    			return handle;
+    	}
+    	}
     }
-    */
     
-    /*
-    private int handleClose(a0){
+    private int handleClose(int handle){
     	if (handle < 0 || handle >= MAXFDS){
     		return -1;
     	}
     	
+    	OpenFile OFStatus = fds[handle].openFile;
+    	if (OFStatus == null) {
+    		return -1;
+    	}
+    	OFStatus.close();
+ 
+    	//recycle handle
+    	fds[handle].fileName = null;
+    	return 0;
     }
-    */
+    
    
    
     private static final int
@@ -505,12 +526,12 @@ public class UserProcess {
 		return handleCreate(a0);
 	case syscallWrite:
 		return handleWrite(a0,a1,a2);
-//	case syscallOpen:
-		//return handleOpen(a0);
+	case syscallOpen:
+		return handleOpen(a0);
 	case syscallRead:
 		return handleRead(a0,a1,a2);
-	//case syscallClose:
-		//return handleClose(a0);
+	case syscallClose:
+		return handleClose(a0);
 
 	default:
 	    Lib.debug(dbgProcess, "Unknown syscall " + syscall);

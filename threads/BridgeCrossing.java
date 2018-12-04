@@ -3,9 +3,9 @@ package nachos.threads;
 public class BridgeCrossing {
 
 	private static int n_of_cars_on_bridge = 0;
-	private static int[] n_of_cars_waiting;
+	private static int[] n_of_cars_waiting = new int [2];
 	private static int cur_dir = -1;
-	private static Lock lock;
+	private static Lock lock = new Lock();
 	private static Condition[] cv;
 	
 	static class Bridge{
