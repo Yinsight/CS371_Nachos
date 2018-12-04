@@ -221,7 +221,7 @@ public class KThread {
 		currentThread.whoWaitsForMe.ready();
 		currentThread.whoWaitsForMe=null;
 		}
-	else
+	
 		sleep();
     }
 
