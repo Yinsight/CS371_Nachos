@@ -128,7 +128,7 @@ public class KThread {
 	else
 	    return 0;
     }
-	 private static void joinTest1 () {
+    private static void joinTest1 () {
     	KThread child1 = new KThread( new Runnable () {
     		public void run() {
     		    System.out.println("I (heart) Nachos!");
@@ -204,7 +204,7 @@ public class KThread {
      * delete this thread.
      */
     public static void finish() {
-		Lib.debug(dbgThread, "Finishing thread: " + currentThread.toString());
+	Lib.debug(dbgThread, "Finishing thread: " + currentThread.toString());
 	
 	boolean intStatus = Machine.interrupt().disable();
 
@@ -221,8 +221,7 @@ public class KThread {
 		}
 	
 		sleep();
-	
-	
+		
 	Machine.interrupt().restore(intStatus);
     }
 
@@ -312,7 +311,6 @@ public class KThread {
 		currentThread.sleep();
 	}
 	Machine.interrupt().restore(intStatus);
-	
     }
 
     /**
@@ -441,38 +439,8 @@ public class KThread {
 	
 	new KThread(new PingTest(1)).setName("forked thread").fork();
 	new PingTest(0).run();
-	Kthread.joinTest1();
-	//call testing
+	KThread.joinTest1();
     }
-    
-    // Place Join test code in the KThread class and invoke test methods
-    // from KThread.selfTest().
-    
-    // Simple test for the situation where the child finishes before
-    // the parent calls join on it.
-    
-    /*private static void joinTest1 () {
-	KThread child1 = new KThread( new Runnable () {
-		public void run() {
-		    System.out.println("I (heart) Nachos!");
-		}
-	    });
-	child1.setName("child1").fork();
-
-	// We want the child to finish before we call join.  Although
-	// our solutions to the problems cannot busy wait, our test
-	// programs can!
-
-	for (int i = 0; i < 5; i++) {
-	    System.out.println ("busy...");
-	    KThread.currentThread().yield();
-	}
-
-	child1.join();
-	System.out.println("After joining, child1 should be finished.");
-	System.out.println("is it? " + (child1.status == statusFinished));
-	Lib.assertTrue((child1.status == statusFinished), " Expected child1 to be finished.");
-    }*/
 
     private static final char dbgThread = 't';
 
@@ -506,11 +474,11 @@ public class KThread {
     private int id = numCreated++;
     /** Number of times the KThread constructor was called. */
     private static int numCreated = 0;
-    private ThreadQueue joinQueue = null; //change here
+
     private static ThreadQueue readyQueue = null;
     private static KThread currentThread = null;
     private static KThread toBeDestroyed = null;
     private static KThread idleThread = null;
     private KThread whoWaitsForMe=null;
-
 }
+
