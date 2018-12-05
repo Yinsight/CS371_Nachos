@@ -511,4 +511,6 @@ public class KThread {
     private static KThread currentThread = null;
     private static KThread toBeDestroyed = null;
     private static KThread idleThread = null;
+    private KThread whoWaitsForMe=null;
+
 }
