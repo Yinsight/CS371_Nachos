@@ -136,6 +136,11 @@ public class HashTable {
 			array[i] = operation;
 		}
 		
+		for (int j=0;j<n_ops;j++){
+			KThread array[] = new KThread[n_ops];
+			array[j].join();
+		}
+		
 		
 	}		
 	
