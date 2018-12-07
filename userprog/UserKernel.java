@@ -112,4 +112,35 @@ public class UserKernel extends ThreadedKernel {
 
     // dummy variables to make javac smarter
     private static Coff dummy1 = null;
+    
+    //book keep the availability of physical pages
+    /*
+    private HashSet availPages;
+    int allocatePage(){
+    	//numofpages known
+    	//this func only returns ppn
+    	for (each page from 0 to max of phy pages){
+    		if(availPages.contain(i)){ //test
+    			availPages.remove(i); //set
+    			return i;
+    		} else {
+    			//next page
+    		}
+    	}
+    	//use lock or semaphore
+    }
+    
+    freeOnePage(int ppn){
+    }
+    */
+    
+    //public int Translate(int vaddr){
+    	//final int pageSize = Processor.pageSize;
+    	//int vpn = vaddr % pageSize;
+    	//int ppn = pageTable[vpn];
+    	
+    //}
+    
+
+    
 }

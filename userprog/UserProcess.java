@@ -146,6 +146,13 @@ public class UserProcess {
 	 *            array.
 	 * @return the number of bytes successfully transferred.
 	 */
+	
+	 public int Translate(int vaddr){
+	    	int vpn = vaddr % pageSize;
+	    	int ppn = pageTable[vpn];
+	    	//TranslationEntry(i, i, true, false, false, false);
+	    }
+	
 	public int readVirtualMemory(int vaddr, byte[] data, int offset, int length) {
 		Lib.assertTrue(offset >= 0 && length >= 0
 				&& offset + length <= data.length);
@@ -153,11 +160,14 @@ public class UserProcess {
 		byte[] memory = Machine.processor().getMemory();
 
 		// for now, just assume that virtual addresses equal physical addresses
-		if (vaddr < 0 || vaddr >= memory.length)
+		
+		int paddr = Translate(vaddr);
+		
+		if (paddr < 0 || paddr >= memory.length)
 			return 0;
 
-		int amount = Math.min(length, memory.length - vaddr);
-		System.arraycopy(memory, vaddr, data, offset, amount);
+		int amount = Math.min(length, memory.length - paddr);
+		System.arraycopy(memory, paddr, data, offset, amount);
 
 		return amount;
 	}
@@ -200,12 +210,17 @@ public class UserProcess {
 
 		byte[] memory = Machine.processor().getMemory();
 
+		
+		int paddr = Translate(vaddr);
+		
 		// for now, just assume that virtual addresses equal physical addresses
-		if (vaddr < 0 || vaddr >= memory.length)
+		if (paddr < 0 || paddr >= memory.length)
 			return 0;
+		
+		//physical ... = translation
 
-		int amount = Math.min(length, memory.length - vaddr);
-		System.arraycopy(data, offset, memory, vaddr, amount);
+		int amount = Math.min(length, memory.length - paddr);
+		System.arraycopy(data, offset, memory, paddr, amount);
 
 		return amount;
 	}
@@ -274,6 +289,8 @@ public class UserProcess {
 
 		// and finally reserve 1 page for arguments
 		numPages++;
+		
+		//setuppagetable();
 
 		if (!loadSections())
 			return false;
@@ -306,6 +323,8 @@ public class UserProcess {
 	 * @return <tt>true</tt> if the sections were successfully loaded.
 	 */
 	protected boolean loadSections() {
+		//set up pagetable translation
+		// i, allocatePage[i] <- declare in userkernel
 		if (numPages > Machine.processor().getNumPhysPages()) {
 			coff.close();
 			Lib.debug(dbgProcess, "\tinsufficient physical memory");
@@ -575,6 +594,10 @@ public class UserProcess {
 			return handleClose(a0);
 		case syscallExit:
 			return handleExit(a0);
+		//case syscallExec:
+			//return handleExec();
+		//case syscallJoin:
+			//return handleJoin();
 
 		default:
 			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
