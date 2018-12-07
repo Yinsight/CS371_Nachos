@@ -5,4 +5,5 @@ public class LinkedListException extends Exception {
 	public LinkedListException(String e){
 		this.e = e;
 	}
+
 }
