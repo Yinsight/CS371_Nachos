@@ -51,7 +51,7 @@ public class ThreadedKernel extends Kernel {
 	Semaphore.selfTest();
 	SynchList.selfTest();
 	//PrioritySchedulerTest.simplePrioritySchedulerTest();
-	//commented the PSTest out so it does not impact our parts
+	//commented the PSTest out so it does not impact other parts
 	BridgeCrossing.selfTest();
 	if (Machine.bank() != null) {
 	    ElevatorBank.selfTest();
