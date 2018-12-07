@@ -82,7 +82,12 @@ public class UserKernel extends ThreadedKernel {
     	int[] availablePage= new int[numOfPages];
     	int i=0;
     	
+<<<<<<< HEAD
     	while(i<Machine.processor().getNumPhysPages()&&numOfPages>0){
+=======
+    	while(i<Machine.processor().getNumPhysPages()&& numOfPages>0){
+    		
+>>>>>>> c583976691a551e2d4efc39abb20458546a80c0c
     		
     			lock.acquire();
     			if(freePages.containsKey(i)){
@@ -90,8 +95,13 @@ public class UserKernel extends ThreadedKernel {
     			freePages.remove(i);
     			numOfPages--;
     			}
+    			i++;
     			lock.release();
+<<<<<<< HEAD
     	
+=======
+    		
+>>>>>>> c583976691a551e2d4efc39abb20458546a80c0c
     	}
     	return availablePage;
     	
@@ -155,10 +165,24 @@ public class UserKernel extends ThreadedKernel {
     /** Globally accessible reference to the synchronized console. */
     public static SynchConsole console;
     
+<<<<<<< HEAD
     //protected TranslationEntry[] pageTable;
     //initialize hash-map
     static HashMap<Integer, Integer> freePages = new HashMap<Integer, Integer>();
     static Lock lock = new Lock();
+=======
+    /*private static Stack<Integer> freePages = new Stack<Integer>();
+    static{
+    for(int i=0;i<Machine.processor().getNumPhysPages();i++){
+    	freePages.add(i);
+    }
+    }*/
+    
+    //protected TranslationEntry[] pageTable;
+    //initialize hash-map
+    static HashMap<Integer, Integer> freePages = new HashMap<Integer, Integer>();
+    static final Lock lock = new Lock();
+>>>>>>> c583976691a551e2d4efc39abb20458546a80c0c
     // dummy variables to make javac smarter
     private static Coff dummy1 = null;
 }
