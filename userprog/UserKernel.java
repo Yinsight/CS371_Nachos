@@ -72,18 +72,18 @@ public class UserKernel extends ThreadedKernel {
 	return ((UThread) KThread.currentThread()).process;
     }
 
-    public int getFreePage(){
+    public static int getFreePage(){
     	return getFreePages(1)[0];
     	
     }
     
-    public int[] getFreePages(int numOfPages){
+    public static int[] getFreePages(int numOfPages){
     	
     	int[] availablePage= new int[numOfPages];
+    	int i=0;
     	
-    	while(numOfPages>0){
+    	while(i<Machine.processor().getNumPhysPages()&&numOfPages>0){
     		
-    		for(int i=0;i<Machine.processor().getNumPhysPages();i++){
     			lock.acquire();
     			if(freePages.containsKey(i)){
     			availablePage[numOfPages]=i;
@@ -91,15 +91,17 @@ public class UserKernel extends ThreadedKernel {
     			numOfPages--;
     			}
     			lock.release();
-    		}	
+    	
     	}
     	return availablePage;
     	
     }
     
-    public void free(int A[]){
+    public static void free(int A[]){
     	for(int i=0;i<A.length;i++){
+    		Machine.interrupt().disable();
     		freePages.put(A[i],0);
+    		Machine.interrupt().enable();
     	}
     }
     /**
@@ -153,17 +155,10 @@ public class UserKernel extends ThreadedKernel {
     /** Globally accessible reference to the synchronized console. */
     public static SynchConsole console;
     
-    /*private static Stack<Integer> freePages = new Stack<Integer>();
-    static{
-    for(int i=0;i<Machine.processor().getNumPhysPages();i++){
-    	freePages.add(i);
-    }
-    }*/
-    
-    protected TranslationEntry[] pageTable;
+    //protected TranslationEntry[] pageTable;
     //initialize hash-map
-    HashMap<Integer, Integer> freePages = new HashMap<Integer, Integer>();
-    final Lock lock = new Lock();
+    static HashMap<Integer, Integer> freePages = new HashMap<Integer, Integer>();
+    static Lock lock = new Lock();
     // dummy variables to make javac smarter
     private static Coff dummy1 = null;
 }

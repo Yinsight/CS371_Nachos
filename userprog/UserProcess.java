@@ -360,12 +360,7 @@ public class UserProcess {
 				// for now, just assume virtual addresses=physical addresses
 
 				int ppn = pageTable[vpn].ppn;
-				if (section.isReadOnly()){
-					pageTable[vpn].readOnly = true;
-				}
-				else {
-					//
-				}
+				pageTable[vpn].readOnly = section.isReadOnly();
 				section.loadPage(i, ppn);
 			}
 		}
@@ -376,6 +371,12 @@ public class UserProcess {
 	 * Release any resources allocated by <tt>loadSections()</tt>.
 	 */
 	protected void unloadSections() {
+		int [] PTarray = new int[pageTable.length];
+		//Integer a = new Integer(10);
+		for (int i=0;i<pageTable.length;i++){
+			PTarray[i] = pageTable[i].ppn;
+		}
+		UserKernel.free(PTarray);
 	}
 
 	/**
@@ -539,8 +540,12 @@ public class UserProcess {
 	//}
 	
 	private int handleExit(int a0) {
-		// TODO Auto-generated method stub
-		
+		// invoke unloadSections
+		unloadSections();
+		//The logic of free fds:
+		//write a loop that looks like pageTable entry
+		//loop through fds array
+		//release every element
 		return 0;
 	}
 
