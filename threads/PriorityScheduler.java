@@ -149,8 +149,24 @@ public class PriorityScheduler extends Scheduler {
 	    
 	    
 	    ThreadState thread = pickNextThread(); //pickNextThread is of type ThreadState
-	    if(thread != null){
+	    if(thread == null){
+	    	owner=null;
+	    }
+	    else if(thread != null){
+	    	
+	    	/*for(Iterator<KThread> it = waitQueue.iterator(); it.hasNext();){
+				KThread td = it.next();*/
+				
+	    	
+	    	for(int i=0;i<getThreadState(owner).waiters.size();i++){
+	    	getThreadState(owner).waiters.remove(i);
+	    	}
 	    	waitQueue.remove(thread);
+	    	//owner=thread.thread;
+	    	
+	    	getThreadState(thread.thread).acquire(this);
+	    	
+	    	
 	    }
 	    return thread.thread;
 	    // implement me
@@ -165,10 +181,15 @@ public class PriorityScheduler extends Scheduler {
 	 *		return.
 	 */
 	protected ThreadState pickNextThread() {
-		KThread nextThread = null;
+		KThread nextThread = waitQueue.getFirst();
 		
 		for(Iterator <KThread> it = waitQueue.iterator(); it.hasNext();){
 			KThread t = it.next();
+			
+			if(t==owner){
+				
+			}
+			else{		
 			int priority =getThreadState(t).getEffectivePriority();
 			
 			if(t==null || priority>getThreadState(nextThread).getEffectivePriority()){
@@ -176,27 +197,47 @@ public class PriorityScheduler extends Scheduler {
 				nextThread=t;
 			}
 		}
+		}
 	    // implement me
 	    return getThreadState(nextThread);
 	}
 	
 	public int getEffectivePriority(){
 		
+		int effectivePriority=priorityMinimum;
 		if(transferPriority == false){
-			
 		
-		effectivePriority=priorityMinimum;
 		for(Iterator<KThread> it = waitQueue.iterator(); it.hasNext();){
 			KThread td = it.next();
-					
-			int priority =getThreadState(td).getEffectivePriority();
+			if(td==owner){
+				
+			}
+			else{		
+			int priority =getThreadState(td).getPriority();
 			if(priority>effectivePriority){
 				effectivePriority = priority;
 			}
 		
 		}
-		
+		}
 	}
+		else{
+			
+			for(Iterator<KThread> it = waitQueue.iterator(); it.hasNext();){
+				KThread td = it.next();
+				
+				if(td==owner){
+					
+				}
+				else{		
+				int priority =getThreadState(td).getEffectivePriority();
+				if(priority>effectivePriority){
+					effectivePriority = priority;
+				}
+			
+			}
+			}
+		}
 		return effectivePriority;
 	}
 	
@@ -212,7 +253,7 @@ public class PriorityScheduler extends Scheduler {
 	 * threads to the owning thread.
 	 */
 	public boolean transferPriority;
-	private int effectivePriority;
+	//private int effectivePriority;
 	private LinkedList<KThread> waitQueue = new LinkedList<KThread>();
 	private KThread owner =null;
     }
@@ -255,6 +296,7 @@ public class PriorityScheduler extends Scheduler {
 	public int getEffectivePriority() {
 		int maxPriority=this.priority;
 		
+		
 		for(Iterator <KThread> it = waiters.iterator(); it.hasNext();){
 		KThread t = it.next();
 		int priority=getThreadState(t).getEffectivePriority();
@@ -262,6 +304,7 @@ public class PriorityScheduler extends Scheduler {
 			maxPriority=priority;
 		}
 		}
+		
 		return maxPriority;
 	}
 
@@ -320,7 +363,15 @@ public class PriorityScheduler extends Scheduler {
 		
 		waitQueue.owner=this.thread;
 		
-		
+		for(Iterator <KThread> it = waitQueue.waitQueue.iterator(); it.hasNext();){
+			KThread t = it.next();
+			if(t==waitQueue.owner){
+			
+			}
+			else{
+			getThreadState(waitQueue.owner).waiters.add(t);
+			}
+		}
 		/*if(waitQueue == waiting){
 			waiting = null;
 		}*/
