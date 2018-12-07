@@ -328,12 +328,13 @@ public class UserProcess {
 	 */
 
 	protected void SetUpPageTable() {
+		
 		pageTable = new TranslationEntry[numPages];
 		for (int i = 0; i < numPages; i++) {
 			pageTable[i] = new TranslationEntry(i, UserKernel.getFreePage(),
 					true, false, false, false);
 		}
-
+	
 	}
 
 	protected boolean loadSections() {
@@ -345,7 +346,7 @@ public class UserProcess {
 			Lib.debug(dbgProcess, "\tinsufficient physical memory");
 			return false;
 		}
-
+		
 		// load sections
 		for (int s = 0; s < coff.getNumSections(); s++) {
 			CoffSection section = coff.getSection(s);
@@ -359,10 +360,15 @@ public class UserProcess {
 				// for now, just assume virtual addresses=physical addresses
 
 				int ppn = pageTable[vpn].ppn;
+				if (section.isReadOnly()){
+					pageTable[vpn].readOnly = true;
+				}
+				else {
+					//
+				}
 				section.loadPage(i, ppn);
 			}
 		}
-
 		return true;
 	}
 
@@ -522,6 +528,21 @@ public class UserProcess {
 		fds[handle].fileName = null;
 		return 0;
 	}
+	
+	//private int handleExec(int a0, int a1, int a2){
+		
+		
+	//}
+	
+	//private int handleJoin(int a0, int a1){
+		
+	//}
+	
+	private int handleExit(int a0) {
+		// TODO Auto-generated method stub
+		
+		return 0;
+	}
 
 	private static final int syscallHalt = 0, syscallExit = 1, syscallExec = 2,
 			syscallJoin = 3, syscallCreate = 4, syscallOpen = 5,
@@ -611,10 +632,10 @@ public class UserProcess {
 			return handleClose(a0);
 		case syscallExit:
 			return handleExit(a0);
-			// case syscallExec:
-			// return handleExec();
-			// case syscallJoin:
-			// return handleJoin();
+		//case syscallExec:
+			//return handleExec(a0,a1,a2);
+		//case syscallJoin:
+			//return handleJoin(a0,a1);
 
 		default:
 			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
@@ -623,10 +644,6 @@ public class UserProcess {
 		return 0;
 	}
 
-	private int handleExit(int a0) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
 
 	/**
 	 * Handle a user exception. Called by <tt>UserKernel.exceptionHandler()</tt>
