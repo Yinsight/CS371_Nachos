@@ -3,6 +3,12 @@ package nachos.userprog;
 import nachos.machine.*;
 import nachos.threads.*;
 import nachos.userprog.*;
+import java.util.HashMap.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.LinkedList;
+import java.util.Stack;
+
 
 /**
  * A kernel that can support multiple user processes.
@@ -13,6 +19,9 @@ public class UserKernel extends ThreadedKernel {
      */
     public UserKernel() {
 	super();
+	for(int i=0;i<Machine.processor().getNumPhysPages();i++){
+		freePages.put(i,0);
+	}
     }
 
     /**
@@ -59,6 +68,22 @@ public class UserKernel extends ThreadedKernel {
 	    return null;
 	
 	return ((UThread) KThread.currentThread()).process;
+    }
+    
+    public static int getFreePage(){
+    	return getFreePages(1)[0];
+    }
+    public static int[] getFreePages(int numOfPages){
+    	int[] availablePage = new int[numOfPages];
+    	while(numOfPages>0){
+    		for(int i=0;i<Machine.processor().getNumPhysPages();i++){
+    			lock.acquire();
+    			availablePage[i]=freePages.get(i);
+    			numOfPages--;
+    			lock.release();
+    		}
+    	}
+    	return availablePage;
     }
 
     /**
@@ -141,6 +166,8 @@ public class UserKernel extends ThreadedKernel {
     	
     //}
     
-
+    protected TranslationEntry[] pageTable;
+    static HashMap<Integer,Integer> freePages = new HashMap<Integer,Integer>();
+    final static Lock lock = new Lock();
     
 }

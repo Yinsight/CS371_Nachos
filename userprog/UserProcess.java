@@ -148,9 +148,12 @@ public class UserProcess {
 	 */
 	
 	 public int Translate(int vaddr){
-	    	int vpn = vaddr % pageSize;
-	    	int ppn = pageTable[vpn];
+	    	int vpn = vaddr / pageSize;
+	    	int offset = vaddr - vaddr/pageSize * pageSize;
+	    	int ppn = pageTable[vpn].ppn;
 	    	//TranslationEntry(i, i, true, false, false, false);
+	    	int paddr = ppn * pageSize + offset;
+	    	return paddr;
 	    }
 	
 	public int readVirtualMemory(int vaddr, byte[] data, int offset, int length) {
@@ -319,11 +322,22 @@ public class UserProcess {
 	 * Allocates memory for this process, and loads the COFF sections into
 	 * memory. If this returns successfully, the process will definitely be run
 	 * (this is the last step in process initialization that can fail).
+	 * @return 
 	 * 
 	 * @return <tt>true</tt> if the sections were successfully loaded.
 	 */
+	
+	protected void SetUpPageTable(){
+		pageTable = new TranslationEntry[numPages];
+		for (int i=0; i<numPages;i++){
+			pageTable[i] = new TranslationEntry(i,UserKernel.getFreePage(),true,false,false,false);
+		}
+		
+	}
+	
 	protected boolean loadSections() {
 		//set up pagetable translation
+		SetUpPageTable();
 		// i, allocatePage[i] <- declare in userkernel
 		if (numPages > Machine.processor().getNumPhysPages()) {
 			coff.close();
@@ -342,7 +356,9 @@ public class UserProcess {
 				int vpn = section.getFirstVPN() + i;
 
 				// for now, just assume virtual addresses=physical addresses
-				section.loadPage(i, vpn);
+				
+				int ppn = pageTable[vpn].ppn;
+				section.loadPage(i, ppn);
 			}
 		}
 
