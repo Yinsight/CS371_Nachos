@@ -8,142 +8,124 @@ public class LinkedList {
 	private int numNodes;
 	private Semaphore sem;
 
-	public static void main(String[] args) throws InterruptedException {
 
-	}
-
-	public LinkedList(int i) {
-
-		head = new Node(i);
-		numNodes = 0;
+	public LinkedList(int numNodes) {
+		//head = new Node(i);
+		this.numNodes = numNodes;
 		sem = new Semaphore(1);
-
 	}
 
-	public Node intanceOfNode(int i) {
 
-		return new Node(i);
-
-	}
-
-	public void add(int i) throws InterruptedException {
-
-		head.acquire();
-		Node pre = head;
-		Node now = head.next;
-		
-		while (now != null) {
-			pre = now;
-			now = now.next;
+	public void insert(int key, int value) throws LinkedListException {
+	
+		try {
+			sem.acquire();
+		} catch (InterruptedException e) {
+			throw new LinkedListException("Duplicate key");
 		}
+		//head.acquire();
 		
-		pre.next = new Node(i);
+		Node temp = new Node(key, value);
+		
+		temp.next = head;
+		
+		head = temp;
+		
 		numNodes++;
-		head.release();
-		
+		//head.release();
+		sem.release();
 	}
 
-	public void deleteAtIndex(int index) throws InterruptedException {
+	public void delete(int key) throws LinkedListException{
 		
-		head.acquire();
-		Node temp = head;
-		
-		for (int i = 0; i < index - 1 && temp.next != null; i++) {
-			temp = temp.next;
+		try {
+			sem.acquire();
+		} catch (InterruptedException e) {
+			throw new LinkedListException("Semaphore failed to acquire");
 		}
-
-		temp.next = temp.next.next;
+		//head.acquire();
+		Node pre = head;
+		Node cur = head;
+		
+		//special case
+		if(cur.key == key){
+			head = head.next;
+			sem.release();
+			return;
+		}
+		
+		while(cur.key!=key && cur.next != null){
+			pre = cur;
+			cur = cur.next;
+		}
+		
+		if (cur.next == null){
+			throw new LinkedListException("Cannot find the key to delete");
+		}
+		
+		if (cur.key == key){
+			pre.next = cur.next;
+			sem.release();
+			return;
+		}
+		
 		numNodes--;
-		head.release();
+		//head.release();
+		//sem.release();
 		
 	}
 
-	public int find(Node n) {
-		Node t = head;
-		int index = 0;
+
+	public int find(int key) throws LinkedListException {
+
+		try {
+			sem.acquire();
+		} catch (InterruptedException e) {
+			throw new LinkedListException("Semaphore failed to acquire");
+		}
+		//head.acquire();
 		
-		while (t != null && t.data != n.data) {
-			index++;
-			t = t.next;
+		Node pre = head;
+		Node cur = head;
+		
+		while(cur.key!=key && cur.next != null){
+			pre = cur;
+			cur = cur.next;
 		}
 		
-		return index;
-	}
-
-	public int findByValue(int value) {
-
-		int index = find(new Node(value));
-		if (index >= getSize()) {
-			return -1;
-		}
-		return index;
-	}
-
-	public int find(int index) {
-
-		head.acquire();
-		Node temp = head;
-		
-		for (int i = 0; i < index; i++) {
-			temp = temp.next;	
+		if (cur.next == null){
+			throw new LinkedListException("Cannot find the key");
+		}else {
+			sem.release();
+			return cur.value;
 		}
 		
-		int tempvalue = temp.getData();
-		head.release();
-		return tempvalue;
+		//sem.release();
+		//head.release();
+	
 	}
 
 	public int getSize() {
-
 		return numNodes;
-
 	}
 
 	public class Node {
 
 		// Declare class variables
 		private Node next;
-		private int data;
+		private int value;
+		private int key;
 		Semaphore sem;
 
-		public Node(int i) {
+		public Node(int key, int value) {
 
 			sem = new Semaphore(1);
-			data = i;
+			this.value = value;
+			this.key = key;
 
 		}
 
-		public int getData() {
-			return data;
-		}
-
-		public void acquire() {
-
-			try {
-				sem.acquire();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-				sem.release();
-			}
-		}
-
-		public void release() {
-
-			sem.release();
-
-		}
 	}
-
-	public void remove(int key) {
-
-		int index = find(new Node(key));
-		if (index >= numNodes) {
-			return;
-		}
-		try {
-			deleteAtIndex(index);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+		
 	}
 }
