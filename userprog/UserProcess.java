@@ -26,7 +26,15 @@ public class UserProcess {
 	int numPhysPages = Machine.processor().getNumPhysPages();
 	pageTable = new TranslationEntry[numPhysPages];
 	for (int i=0; i<numPhysPages; i++)
-	    pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
+	    pageTable[i] = new TranslationEntry(i,i,true,false,false,false);
+    
+    fds = new FileDescriptor[MAXFDS];
+    for (int i = 0; i < MAXFDS; i++)
+    	fds[i] = new FileDescriptor();
+    fds[STDIN].openFile = UserKernel.console.openForReading();
+    fds[STDIN].fileName = "stdin";
+    fds[STDOUT].openFile = UserKernel.console.openForWriting();
+    fds[STDOUT].fileName = "stdout";
     }
     
     /**
@@ -215,7 +223,7 @@ public class UserProcess {
 	}
 
 	// make sure the sections are contiguous and start at page 0
-	numPages = 0;
+	numPages = 0; 
 	for (int s=0; s<coff.getNumSections(); s++) {
 	    CoffSection section = coff.getSection(s);
 	    if (section.getFirstVPN() != numPages) {
@@ -253,6 +261,7 @@ public class UserProcess {
 	if (!loadSections())
 	    return false;
 
+	// Homework should be here
 	// store arguments in last page
 	int entryOffset = (numPages-1)*pageSize;
 	int stringOffset = entryOffset + args.length*4;
@@ -261,16 +270,28 @@ public class UserProcess {
 	this.argv = entryOffset;
 	
 	for (int i=0; i<argv.length; i++) {
+		//key solution hints for exec syscall
 	    byte[] stringOffsetBytes = Lib.bytesFromInt(stringOffset);
 	    Lib.assertTrue(writeVirtualMemory(entryOffset,stringOffsetBytes) == 4);
-	    entryOffset += 4;
+	    // first writeVirtualMemory 
+	    // data in stringoffsetbytes comes frrom entryoffset + args.length*4
+	    entryOffset += 4;  
+	    //move entry of offset down, first pointing at first argument, now
+	    //pointing at second argument
 	    Lib.assertTrue(writeVirtualMemory(stringOffset, argv[i]) ==
 		       argv[i].length);
+	    // read from entryoffset and write into stringoffset
 	    stringOffset += argv[i].length;
 	    Lib.assertTrue(writeVirtualMemory(stringOffset,new byte[] { 0 }) == 1);
+	    //
 	    stringOffset += 1;
 	}
-
+	
+	// two indirections
+	//first write: load address of argument
+	//then write xxx into address space, load content of argument according to address
+	
+	
 	return true;
     }
 
@@ -345,7 +366,120 @@ public class UserProcess {
 	Lib.assertNotReached("Machine.halt() did not halt machine!");
 	return 0;
     }
-
+    
+    private int handleCreate(int a0){
+    	String fileName = readVirtualMemoryString(a0, MAXSTRLEN);
+    	OpenFile OFStatus = UserKernel.fileSystem.open(fileName,true);
+    	if (OFStatus == null){
+    		return -1;
+    	}
+    	else{
+    		int handle = getNextAvailHandle();
+    		if (handle < 0)
+    			return -1;
+    		else{
+    			fds[handle].fileName = fileName;
+    			fds[handle].openFile = OFStatus;
+    			return handle;
+    		}
+    	}
+    }
+    
+    private int getNextAvailHandle(){
+    	for (int i = 0; i < MAXFDS; i++){
+    		if (fds[i].fileName == null){
+    			return i;
+    		}
+    	}
+    	return -1;
+    }
+    
+    private int handleWrite(int handle,int virtBuf, int size){
+    	if (handle<0||handle>=MAXFDS){
+    		return -1;
+    	}
+    	FileDescriptor fd = fds[handle];
+    	if (fd == null){
+    		return -1;
+    	}
+    	if (size < 0){
+    		return -1;
+    	} else if (size ==0){
+    		return 0;
+    	}
+    	byte[] kernelBuffer = new byte[size];
+    	int actualSize = readVirtualMemory(virtBuf, kernelBuffer, 0, size);
+    	if (actualSize == -1){
+    		return -1;
+    	}
+    	if (fd.openFile == null){
+    		return -1;
+    	}
+    	actualSize = fd.openFile.write(kernelBuffer, 0, actualSize);
+    	if (actualSize<0){
+    		return -1;
+    	}
+    	return actualSize;
+    }
+    
+    private int handleRead(int handle, int virtBuf, int size){
+    	if (handle<0||handle>=MAXFDS){
+    		return -1;
+    	}
+    	FileDescriptor fd = fds[handle];
+    	if (fd==null){
+    		return -1;
+    	}
+    	if(size < 0){
+    		return -1;
+    	}else if (size == 0){
+    		return 0;
+    	}
+    	byte [] kernelBuffer = new byte[size];
+    	int actualSize;
+    	actualSize = fd.openFile.read(kernelBuffer,0,size);
+    	if (actualSize<0){
+    		return -1;
+    	}
+    	actualSize = writeVirtualMemory(virtBuf,kernelBuffer,0,size);
+    	if (actualSize<0){
+    		return -1;
+    	}
+    	return actualSize;
+    }
+    
+    private int handleOpen(int a0){
+    	String fileName = readVirtualMemoryString(a0,MAXSTRLEN);
+    	if (fileName ==null){
+    		return -1;
+    	}
+    	OpenFile OFStatus = UserKernel.fileSystem.open(fileName,false);
+    	if (OFStatus == null){
+    		return -1;
+    	} else {
+    		int handle = getNextAvailHandle();
+    		if (handle<0)
+    			return -1;
+    		else{
+    			fds[handle].fileName = fileName;
+    			fds[handle].openFile = OFStatus;
+    			return handle;
+    		}
+    	}
+    }
+    
+    private int handleClose(int handle){
+    	if (handle < 0||handle>=MAXFDS){
+    		return -1;
+    	}
+    	OpenFile OFStatus = fds[handle].openFile;
+    	if (OFStatus == null){
+    		return -1;
+    	}
+    	OFStatus.close();
+    	fds[handle].fileName = null;
+    	return 0;
+    }
 
     private static final int
         syscallHalt = 0,
@@ -391,6 +525,18 @@ public class UserProcess {
 	switch (syscall) {
 	case syscallHalt:
 	    return handleHalt();
+	case syscallCreate:
+		return handleCreate(a0);
+	case syscallWrite:
+		return handleWrite(a0,a1,a2);
+	case syscallOpen:
+		return handleOpen(a0);
+	case syscallRead:
+		return handleRead(a0,a1,a2);
+	case syscallClose:
+		return handleClose(a0);
+	case syscallExit:
+		return handleExit(a0);
 
 
 	default:
@@ -400,7 +546,12 @@ public class UserProcess {
 	return 0;
     }
 
-    /**
+    private int handleExit(int a0) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	/**
      * Handle a user exception. Called by
      * <tt>UserKernel.exceptionHandler()</tt>. The
      * <i>cause</i> argument identifies which exception occurred; see the
@@ -446,4 +597,20 @@ public class UserProcess {
 	
     private static final int pageSize = Processor.pageSize;
     private static final char dbgProcess = 'a';
+    
+    public final static int MAXFDS = 16;
+    public final static int MAXSTRLEN = 256;
+    
+    public final static int STDIN = 0;
+    public final static int STDOUT = 1;
+    
+    class FileDescriptor{
+    	String fileName;
+    	OpenFile openFile;
+    }
+    
+    private FileDescriptor[] fds;
+    
+    
+    
 }
