@@ -93,12 +93,14 @@ public class HashTable {
 			this.op = op;
 			this.result = result;
 		}
+
 	}
 
 	public void batch(int n_ops, ThreadOperation[] ops) throws LinkedListException{
 		
 		for (int i=0;i<n_ops;i++){
 			final ThreadOperation op = ops [i];
+			KThread array[] = new KThread[n_ops];
 			KThread operation = new KThread(new Runnable(){
 				public void run(){
 					if(op.op == OperationType.INSERT){
@@ -130,8 +132,11 @@ public class HashTable {
 				}
 			}
 			);
+			operation.fork();
+			array[i] = operation;
 		}
-			
+		
+		
 	}		
 	
 	/*
