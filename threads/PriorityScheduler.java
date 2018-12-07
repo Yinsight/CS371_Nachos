@@ -181,6 +181,10 @@ public class PriorityScheduler extends Scheduler {
 	}
 	
 	public int getEffectivePriority(){
+		
+		if(transferPriority == false){
+			
+		
 		effectivePriority=priorityMinimum;
 		for(Iterator<KThread> it = waitQueue.iterator(); it.hasNext();){
 			KThread td = it.next();
@@ -191,8 +195,12 @@ public class PriorityScheduler extends Scheduler {
 			}
 		
 		}
+		
+	}
 		return effectivePriority;
 	}
+	
+	
 	
 	public void print() {
 	    Lib.assertTrue(Machine.interrupt().disabled());
@@ -206,7 +214,7 @@ public class PriorityScheduler extends Scheduler {
 	public boolean transferPriority;
 	private int effectivePriority;
 	private LinkedList<KThread> waitQueue = new LinkedList<KThread>();
-	//private ThreadState resource = null;
+	private KThread owner =null;
     }
 
     
@@ -245,8 +253,16 @@ public class PriorityScheduler extends Scheduler {
 	 * @return	the effective priority of the associated thread.
 	 */
 	public int getEffectivePriority() {
+		int maxPriority=this.priority;
 		
-		return priority;
+		for(Iterator <KThread> it = waiters.iterator(); it.hasNext();){
+		KThread t = it.next();
+		int priority=getThreadState(t).getEffectivePriority();
+		if(priority>maxPriority){
+			maxPriority=priority;
+		}
+		}
+		return maxPriority;
 	}
 
 	/**
@@ -281,9 +297,10 @@ public class PriorityScheduler extends Scheduler {
 		
 		waitQueue.waitQueue.add(thread);
 		
-		waiting = waitQueue;
+		//waiting = waitQueue;
 		
-	
+		getThreadState(waitQueue.owner).waiters.add(this.thread);
+		
 	    // implement me
 	}
 
@@ -301,12 +318,12 @@ public class PriorityScheduler extends Scheduler {
 		
 		Lib.assertTrue(Machine.interrupt().disabled());
 		
+		waitQueue.owner=this.thread;
 		
 		
-		
-		if(waitQueue == waiting){
+		/*if(waitQueue == waiting){
 			waiting = null;
-		}
+		}*/
 	    // implement me
 	}	
 
@@ -315,11 +332,10 @@ public class PriorityScheduler extends Scheduler {
 	protected int effectivePriority;
 	/** The priority of the associated thread. */
 	protected int priority;
-	protected ThreadQueue waiting;
-	//protected LinkedList <ThreadQueue> ResourceOwner = new LinkedList<ThreadQueue>();
+	//protected ThreadQueue waiting;
+	protected LinkedList <KThread> waiters = new LinkedList<KThread>();
     }
 }
-
 
 
 
