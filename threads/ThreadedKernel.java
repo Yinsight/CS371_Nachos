@@ -2,6 +2,7 @@ package nachos.threads;
 
 import nachos.machine.*;
 
+
 /**
  * A multi-threaded OS kernel.
  */
@@ -46,7 +47,12 @@ public class ThreadedKernel extends Kernel {
      * tests here.
      */	
     public void selfTest() {
-    //HashTable.selfTest();
+	try {
+		HashTableTest.selfTest();
+	} catch (LinkedListException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
 	KThread.selfTest();
 	Condition2.selfTest();
 	Semaphore.selfTest();

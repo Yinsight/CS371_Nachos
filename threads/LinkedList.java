@@ -5,7 +5,7 @@ import java.util.concurrent.Semaphore;
 public class LinkedList {
 	// Class variables for the Linked List
 	private Node head;
-	private int numNodes;
+	int numNodes;
 	private Semaphore sem;
 
 

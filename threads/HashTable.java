@@ -17,6 +17,9 @@ public class HashTable {
 	public HashTable(int n_buckets) {
 		lengthofTable = n_buckets;
 		LL = new LinkedList[n_buckets];
+		for (int i=0;i < n_buckets;i++){
+			LL[i] = new LinkedList(0);
+		}
 	}
 
 	public int hash(int k) {
@@ -28,7 +31,7 @@ public class HashTable {
 		return lengthofTable;
 	}
 
-	public void insert(int k, int val) {
+	public void insert(int k, int val) throws LinkedListException {
 		
 		int temp = hash(k);
 		try {
@@ -41,7 +44,7 @@ public class HashTable {
 		}
 		
 
-	public void remove(int k) {
+	public void remove(int k) throws LinkedListException {
 		
 		int temp = hash(k);
 		try{
@@ -55,7 +58,7 @@ public class HashTable {
 		}
 		
 
-	public int get(int k) {
+	public int get(int k) throws LinkedListException {
 		
 		int temp = hash(k);
 		int v;
@@ -74,32 +77,52 @@ public class HashTable {
 		
 	}
 	
-	enum OperationType{
+ enum OperationType{
 		INSERT,
 		REMOVE,
 		QUERY
 	}
 	
-	protected class ThreadOperation{
-		int k;
-		OperationType op;
-		int result;
+ static class ThreadOperation{
+ 		int k;
+ 		OperationType op;
+ 		int result;
+		
+		public ThreadOperation(int k, OperationType op, int result){
+			this.k = k;
+			this.op = op;
+			this.result = result;
+		}
 	}
 
-	public void batch(int n_ops, ThreadOperation[] ops) {
+	public void batch(int n_ops, ThreadOperation[] ops) throws LinkedListException{
 		
 		for (int i=0;i<n_ops;i++){
 			final ThreadOperation op = ops [i];
 			KThread operation = new KThread(new Runnable(){
 				public void run(){
 					if(op.op == OperationType.INSERT){
-						insert(op.k,op.result);
+						try {
+							insert(op.k,op.result);
+						} catch (LinkedListException e) {
+							
+							e.printStackTrace();
+						}
+				
 					}
 					else if (op.op == OperationType.REMOVE){
-						remove(op.k);
+						try {
+							remove(op.k);
+						} catch (LinkedListException e) {
+							e.printStackTrace();
+						}
 					}
 					else if (op.op == OperationType.QUERY){
-						op.result = get(op.k);
+						try {
+							op.result = get(op.k);
+						} catch (LinkedListException e) {
+							e.printStackTrace();
+						}
 					}
 					else {
 						Lib.assertNotReached();
@@ -111,60 +134,37 @@ public class HashTable {
 			
 	}		
 	
-	public static void selfTest() {
-		
-		KThread array[] = new KThread[10];
-			
-		for(int i=0;i<10;i++){
-			
-			KThread operation = new KThread(new Runnable(){
-				
-						
-			public void run() {
-				
-				HashTable.insert(2,4);
-				HashTable.remove(1);
-				HashTable.get(1);	
-			
-			}
-		}
-		);
-			operation.fork();
-			array[i]=operation;
-		}
-		
-		
-		KThread array1[] = new KThread[10];
-		
-		for(int i=0;i<10;i++){
-			
-			KThread operation = new KThread(new Runnable(){
-			
-			public void run() {
-				
-				HashTable.insert(3,5);
-				HashTable.remove(5);
-				HashTable.get(3);	
-			
-			}
-			
-		}
-		);
-			operation.fork();
-			array1[i]=operation;
-		}
-		
-		
-		for(int j=0;j<10;j++){
-			array[j].join();
-			array1[j].join();
-		}
-			
-		    }
+	/*
+	public static class HashTableTest{
 	
-	public static void main(String[] args) {
+		public static void selfTest() throws LinkedListException {
 		
+			int n_ops = 100;
+		
+			ThreadOperation[] ops = new ThreadOperation[n_ops];
+			
+			for(int i=0;i<n_ops;i++){
+				ops[i] = new ThreadOperation(i, OperationType.INSERT, i);
+			
+			}
+			HashTable table = new HashTable(1000);
+			table.batch(n_ops, ops);
+		}	
 	}
+	
+	*/
+	
+	public int getNumElement(){
+		int sum = 0;
+		for (int i=0;i<lengthofTable;i++){
+			sum += LL[i].numNodes;
+		}
+		
+		//System.out.println("Length of Table is:" + sum);
+		return sum;
+	}
+	
+
 }
 	
 	
