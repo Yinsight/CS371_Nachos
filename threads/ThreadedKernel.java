@@ -51,7 +51,7 @@ public class ThreadedKernel extends Kernel {
 	Condition2.selfTest();
 	Semaphore.selfTest();
 	SynchList.selfTest();
-	PrioritySchedulerTest.simplePrioritySchedulerTest();
+	//PrioritySchedulerTest.simplePrioritySchedulerTest();
 	BridgeCrossing.selfTest();
 	if (Machine.bank() != null) {
 	    ElevatorBank.selfTest();

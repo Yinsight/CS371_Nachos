@@ -16,12 +16,12 @@ public class LinkedList {
 	}
 
 
-	public void insert(int key, int value) throws LinkedListException {
+	public void add(int key, int value) throws LinkedListException {
 	
 		try {
 			sem.acquire();
 		} catch (InterruptedException e) {
-			throw new LinkedListException("Duplicate key");
+			throw new LinkedListException("Sem fail to acquire");
 		}
 		//head.acquire();
 		
@@ -118,14 +118,13 @@ public class LinkedList {
 		Semaphore sem;
 
 		public Node(int key, int value) {
-
 			sem = new Semaphore(1);
 			this.value = value;
 			this.key = key;
-
 		}
 
 	}
+
 		
 	}
-}
+
