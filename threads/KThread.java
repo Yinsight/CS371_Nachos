@@ -443,6 +443,7 @@ public class KThread {
     }
 
     private static final char dbgThread = 't';
+    
 
     /**
      * Additional state used by schedulers.

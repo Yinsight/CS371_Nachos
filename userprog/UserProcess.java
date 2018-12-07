@@ -23,9 +23,12 @@ public class UserProcess {
      * Allocate a new process.
      */
     public UserProcess() {
+    	
+    	
 	int numPhysPages = Machine.processor().getNumPhysPages();
 	pageTable = new TranslationEntry[numPhysPages];
 	for (int i=0; i<numPhysPages; i++)
+<<<<<<< HEAD
 	    pageTable[i] = new TranslationEntry(i,i,true,false,false,false);
     
     fds = new FileDescriptor[MAXFDS];
@@ -35,6 +38,18 @@ public class UserProcess {
     fds[STDIN].fileName = "stdin";
     fds[STDOUT].openFile = UserKernel.console.openForWriting();
     fds[STDOUT].fileName = "stdout";
+=======
+	    pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
+    
+	fds = new FileDescriptor[MAXFDS];
+	for (int i = 0; i < MAXFDS; i++)
+		fds[i] = new FileDescriptor();			
+	fds[STDIN].openFile = UserKernel.console.openForReading();
+	fds[STDIN].fileName = "stdin";
+	fds[STDOUT].openFile = UserKernel.console.openForWriting();
+	fds[STDOUT].fileName = "stdout";
+		
+>>>>>>> a74971ce1d06973cc02ee4b56526c3e7c4b2115e
     }
     
     /**
@@ -373,9 +388,15 @@ public class UserProcess {
     	if (OFStatus == null){
     		return -1;
     	}
+<<<<<<< HEAD
     	else{
     		int handle = getNextAvailHandle();
     		if (handle < 0)
+=======
+    	else {
+    		int handle = getNextAvailHandle();
+    		if (handle<0)
+>>>>>>> a74971ce1d06973cc02ee4b56526c3e7c4b2115e
     			return -1;
     		else{
     			fds[handle].fileName = fileName;
@@ -394,17 +415,28 @@ public class UserProcess {
     	return -1;
     }
     
+<<<<<<< HEAD
     private int handleWrite(int handle,int virtBuf, int size){
     	if (handle<0||handle>=MAXFDS){
+=======
+    private int handleWrite(int handle, int virtBuf, int size){
+    	if (handle < 0 || handle >= MAXFDS){
+>>>>>>> a74971ce1d06973cc02ee4b56526c3e7c4b2115e
     		return -1;
     	}
     	FileDescriptor fd = fds[handle];
     	if (fd == null){
     		return -1;
     	}
+<<<<<<< HEAD
     	if (size < 0){
     		return -1;
     	} else if (size ==0){
+=======
+    	if (size < 0) {
+    		return -1;
+    	} else if (size == 0){
+>>>>>>> a74971ce1d06973cc02ee4b56526c3e7c4b2115e
     		return 0;
     	}
     	byte[] kernelBuffer = new byte[size];
@@ -416,13 +448,18 @@ public class UserProcess {
     		return -1;
     	}
     	actualSize = fd.openFile.write(kernelBuffer, 0, actualSize);
+<<<<<<< HEAD
     	if (actualSize<0){
+=======
+    	if (actualSize < 0){
+>>>>>>> a74971ce1d06973cc02ee4b56526c3e7c4b2115e
     		return -1;
     	}
     	return actualSize;
     }
     
     private int handleRead(int handle, int virtBuf, int size){
+<<<<<<< HEAD
     	if (handle<0||handle>=MAXFDS){
     		return -1;
     	}
@@ -443,14 +480,44 @@ public class UserProcess {
     	}
     	actualSize = writeVirtualMemory(virtBuf,kernelBuffer,0,size);
     	if (actualSize<0){
+=======
+    	if (handle < 0 || handle >= MAXFDS){
+    		return -1;
+    	}
+    	FileDescriptor fd = fds[handle];
+    	if (fd == null){
+    		return -1;
+    	}
+    	if (size < 0) {
+    		return -1;
+    	} else if (size == 0){
+    		return 0;
+    	}
+    	byte[] kernelBuffer = new byte[size];
+    	int actualSize;
+    	actualSize = fd.openFile.read(kernelBuffer, 0, size);
+    	if (actualSize < 0){
+    		return -1;
+    	}
+    	actualSize = writeVirtualMemory(virtBuf, kernelBuffer, 0, size);
+    	if (actualSize < 0){
+>>>>>>> a74971ce1d06973cc02ee4b56526c3e7c4b2115e
     		return -1;
     	}
     	return actualSize;
     }
     
+<<<<<<< HEAD
     private int handleOpen(int a0){
     	String fileName = readVirtualMemoryString(a0,MAXSTRLEN);
     	if (fileName ==null){
+=======
+    
+    private int handleOpen(int a0){
+    	
+    	String fileName = readVirtualMemoryString(a0, MAXSTRLEN);
+    	if (fileName == null){
+>>>>>>> a74971ce1d06973cc02ee4b56526c3e7c4b2115e
     		return -1;
     	}
     	OpenFile OFStatus = UserKernel.fileSystem.open(fileName,false);
@@ -464,11 +531,16 @@ public class UserProcess {
     			fds[handle].fileName = fileName;
     			fds[handle].openFile = OFStatus;
     			return handle;
+<<<<<<< HEAD
     		}
+=======
+    	}
+>>>>>>> a74971ce1d06973cc02ee4b56526c3e7c4b2115e
     	}
     }
     
     private int handleClose(int handle){
+<<<<<<< HEAD
     	if (handle < 0||handle>=MAXFDS){
     		return -1;
     	}
@@ -481,6 +553,25 @@ public class UserProcess {
     	return 0;
     }
 
+=======
+    	if (handle < 0 || handle >= MAXFDS){
+    		return -1;
+    	}
+    	
+    	OpenFile OFStatus = fds[handle].openFile;
+    	if (OFStatus == null) {
+    		return -1;
+    	}
+    	OFStatus.close();
+ 
+    	//recycle handle
+    	fds[handle].fileName = null;
+    	return 0;
+    }
+    
+   
+   
+>>>>>>> a74971ce1d06973cc02ee4b56526c3e7c4b2115e
     private static final int
         syscallHalt = 0,
 	syscallExit = 1,
@@ -521,6 +612,7 @@ public class UserProcess {
      * @param	a3	the fourth syscall argument.
      * @return	the value to be returned to the user.
      */
+    
     public int handleSyscall(int syscall, int a0, int a1, int a2, int a3) {
 	switch (syscall) {
 	case syscallHalt:
@@ -535,9 +627,12 @@ public class UserProcess {
 		return handleRead(a0,a1,a2);
 	case syscallClose:
 		return handleClose(a0);
+<<<<<<< HEAD
 	case syscallExit:
 		return handleExit(a0);
 
+=======
+>>>>>>> a74971ce1d06973cc02ee4b56526c3e7c4b2115e
 
 	default:
 	    Lib.debug(dbgProcess, "Unknown syscall " + syscall);
@@ -545,6 +640,7 @@ public class UserProcess {
 	}
 	return 0;
     }
+    
 
     private int handleExit(int a0) {
 		// TODO Auto-generated method stub
@@ -604,6 +700,7 @@ public class UserProcess {
     public final static int STDIN = 0;
     public final static int STDOUT = 1;
     
+<<<<<<< HEAD
     class FileDescriptor{
     	String fileName;
     	OpenFile openFile;
@@ -612,5 +709,13 @@ public class UserProcess {
     private FileDescriptor[] fds;
     
     
+=======
+    class FileDescriptor {
+    	String fileName;
+    	OpenFile openFile;
+    }
+ 
+    private FileDescriptor[] fds; 
+>>>>>>> a74971ce1d06973cc02ee4b56526c3e7c4b2115e
     
 }
