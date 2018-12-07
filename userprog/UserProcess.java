@@ -19,7 +19,6 @@ import java.io.EOFException;
  * @see nachos.network.NetProcess
  */
 public class UserProcess {
-<<<<<<< HEAD
 	/**
 	 * Allocate a new process.
 	 */
@@ -38,82 +37,6 @@ public class UserProcess {
 		fds[STDOUT].openFile = UserKernel.console.openForWriting();
 		fds[STDOUT].fileName = "stdout";
 
-=======
-    /**
-     * Allocate a new process.
-     */
-    public UserProcess() {
-	
-    }
-    
-    /**
-     * Allocate and return a new process of the correct class. The class name
-     * is specified by the <tt>nachos.conf</tt> key
-     * <tt>Kernel.processClassName</tt>.
-     *
-     * @return	a new process of the correct class.
-     */
-    public static UserProcess newUserProcess() {
-	return (UserProcess)Lib.constructObject(Machine.getProcessClassName());
-    }
-
-    /**
-     * Execute the specified program with the specified arguments. Attempts to
-     * load the program, and then forks a thread to run it.
-     *
-     * @param	name	the name of the file containing the executable.
-     * @param	args	the arguments to pass to the executable.
-     * @return	<tt>true</tt> if the program was successfully executed.
-     */
-    public boolean execute(String name, String[] args) {
-	if (!load(name, args))
-	    return false;
-	
-	new UThread(this).setName(name).fork();
-
-	return true;
-    }
-
-    /**
-     * Save the state of this process in preparation for a context switch.
-     * Called by <tt>UThread.saveState()</tt>.
-     */
-    public void saveState() {
-    }
-
-    /**
-     * Restore the state of this process after a context switch. Called by
-     * <tt>UThread.restoreState()</tt>.
-     */
-    public void restoreState() {
-	Machine.processor().setPageTable(pageTable);
-    }
-
-    /**
-     * Read a null-terminated string from this process's virtual memory. Read
-     * at most <tt>maxLength + 1</tt> bytes from the specified address, search
-     * for the null terminator, and convert it to a <tt>java.lang.String</tt>,
-     * without including the null terminator. If no null terminator is found,
-     * returns <tt>null</tt>.
-     *
-     * @param	vaddr	the starting virtual address of the null-terminated
-     *			string.
-     * @param	maxLength	the maximum number of characters in the string,
-     *				not including the null terminator.
-     * @return	the string read, or <tt>null</tt> if no null terminator was
-     *		found.
-     */
-    public String readVirtualMemoryString(int vaddr, int maxLength) {
-	Lib.assertTrue(maxLength >= 0);
-
-	byte[] bytes = new byte[maxLength+1];
-
-	int bytesRead = readVirtualMemory(vaddr, bytes);
-
-	for (int length=0; length<bytesRead; length++) {
-	    if (bytes[length] == 0)
-		return new String(bytes, 0, length);
->>>>>>> 97d89e72f4fd326f4b75703c4c64b53834903364
 	}
 
 	/**
@@ -223,16 +146,16 @@ public class UserProcess {
 	 *            array.
 	 * @return the number of bytes successfully transferred.
 	 */
-	
-	 public int Translate(int vaddr){
-	    	int vpn = vaddr / pageSize;
-	    	int offset = vaddr - vaddr/pageSize * pageSize;
-	    	int ppn = pageTable[vpn].ppn;
-	    	//TranslationEntry(i, i, true, false, false, false);
-	    	int paddr = ppn * pageSize + offset;
-	    	return paddr;
-	    }
-	
+
+	public int Translate(int vaddr) {
+		int vpn = vaddr / pageSize;
+		int offset = vaddr - vaddr / pageSize * pageSize;
+		int ppn = pageTable[vpn].ppn;
+		// TranslationEntry(i, i, true, false, false, false);
+		int paddr = ppn * pageSize + offset;
+		return paddr;
+	}
+
 	public int readVirtualMemory(int vaddr, byte[] data, int offset, int length) {
 		Lib.assertTrue(offset >= 0 && length >= 0
 				&& offset + length <= data.length);
@@ -240,9 +163,9 @@ public class UserProcess {
 		byte[] memory = Machine.processor().getMemory();
 
 		// for now, just assume that virtual addresses equal physical addresses
-		
+
 		int paddr = Translate(vaddr);
-		
+
 		if (paddr < 0 || paddr >= memory.length)
 			return 0;
 
@@ -290,14 +213,13 @@ public class UserProcess {
 
 		byte[] memory = Machine.processor().getMemory();
 
-		
 		int paddr = Translate(vaddr);
-		
+
 		// for now, just assume that virtual addresses equal physical addresses
 		if (paddr < 0 || paddr >= memory.length)
 			return 0;
-		
-		//physical ... = translation
+
+		// physical ... = translation
 
 		int amount = Math.min(length, memory.length - paddr);
 		System.arraycopy(data, offset, memory, paddr, amount);
@@ -369,8 +291,8 @@ public class UserProcess {
 
 		// and finally reserve 1 page for arguments
 		numPages++;
-		
-		//setuppagetable();
+
+		// setuppagetable();
 
 		if (!loadSections())
 			return false;
@@ -399,21 +321,23 @@ public class UserProcess {
 	 * Allocates memory for this process, and loads the COFF sections into
 	 * memory. If this returns successfully, the process will definitely be run
 	 * (this is the last step in process initialization that can fail).
-	 * @return 
+	 * 
+	 * @return
 	 * 
 	 * @return <tt>true</tt> if the sections were successfully loaded.
 	 */
-	
-	protected void SetUpPageTable(){
+
+	protected void SetUpPageTable() {
 		pageTable = new TranslationEntry[numPages];
-		for (int i=0; i<numPages;i++){
-			pageTable[i] = new TranslationEntry(i,UserKernel.getFreePage(),true,false,false,false);
+		for (int i = 0; i < numPages; i++) {
+			pageTable[i] = new TranslationEntry(i, UserKernel.getFreePage(),
+					true, false, false, false);
 		}
-		
+
 	}
-	
+
 	protected boolean loadSections() {
-		//set up pagetable translation
+		// set up pagetable translation
 		SetUpPageTable();
 		// i, allocatePage[i] <- declare in userkernel
 		if (numPages > Machine.processor().getNumPhysPages()) {
@@ -433,7 +357,7 @@ public class UserProcess {
 				int vpn = section.getFirstVPN() + i;
 
 				// for now, just assume virtual addresses=physical addresses
-				
+
 				int ppn = pageTable[vpn].ppn;
 				section.loadPage(i, ppn);
 			}
@@ -478,19 +402,9 @@ public class UserProcess {
 
 		Machine.halt();
 
-<<<<<<< HEAD
 		Lib.assertNotReached("Machine.halt() did not halt machine!");
 		return 0;
 	}
-=======
-	// and finally reserve 1 page for arguments
-	numPages++;
-	
-	int numPhysPages = Machine.processor().getNumPhysPages();
-	pageTable = new TranslationEntry[numPages];
-	for (int i=0; i<numPhysPages; i++)
-	    pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
->>>>>>> 97d89e72f4fd326f4b75703c4c64b53834903364
 
 	private int handleCreate(int a0) {
 		String fileName = readVirtualMemoryString(a0, MAXSTRLEN);
@@ -697,10 +611,10 @@ public class UserProcess {
 			return handleClose(a0);
 		case syscallExit:
 			return handleExit(a0);
-		//case syscallExec:
-			//return handleExec();
-		//case syscallJoin:
-			//return handleJoin();
+			// case syscallExec:
+			// return handleExec();
+			// case syscallJoin:
+			// return handleJoin();
 
 		default:
 			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
@@ -746,7 +660,6 @@ public class UserProcess {
 	/** The program being run by this process. */
 	protected Coff coff;
 
-<<<<<<< HEAD
 	/** This process's page table. */
 	protected TranslationEntry[] pageTable;
 	/** The number of contiguous pages occupied by the program. */
@@ -775,15 +688,3 @@ public class UserProcess {
 	private FileDescriptor[] fds;
 
 }
-=======
-    /** The number of pages in the program's stack. */
-    protected final int stackPages = 8;
-    
-    private int initialPC, initialSP;
-    private int argc, argv;
-	
-    private static final int pageSize = Processor.pageSize;
-    private static final char dbgProcess = 'a';
-}
-
->>>>>>> 97d89e72f4fd326f4b75703c4c64b53834903364
