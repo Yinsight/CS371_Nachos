@@ -19,6 +19,7 @@ import java.io.EOFException;
  * @see nachos.network.NetProcess
  */
 public class UserProcess {
+<<<<<<< HEAD
 	/**
 	 * Allocate a new process.
 	 */
@@ -37,6 +38,82 @@ public class UserProcess {
 		fds[STDOUT].openFile = UserKernel.console.openForWriting();
 		fds[STDOUT].fileName = "stdout";
 
+=======
+    /**
+     * Allocate a new process.
+     */
+    public UserProcess() {
+	
+    }
+    
+    /**
+     * Allocate and return a new process of the correct class. The class name
+     * is specified by the <tt>nachos.conf</tt> key
+     * <tt>Kernel.processClassName</tt>.
+     *
+     * @return	a new process of the correct class.
+     */
+    public static UserProcess newUserProcess() {
+	return (UserProcess)Lib.constructObject(Machine.getProcessClassName());
+    }
+
+    /**
+     * Execute the specified program with the specified arguments. Attempts to
+     * load the program, and then forks a thread to run it.
+     *
+     * @param	name	the name of the file containing the executable.
+     * @param	args	the arguments to pass to the executable.
+     * @return	<tt>true</tt> if the program was successfully executed.
+     */
+    public boolean execute(String name, String[] args) {
+	if (!load(name, args))
+	    return false;
+	
+	new UThread(this).setName(name).fork();
+
+	return true;
+    }
+
+    /**
+     * Save the state of this process in preparation for a context switch.
+     * Called by <tt>UThread.saveState()</tt>.
+     */
+    public void saveState() {
+    }
+
+    /**
+     * Restore the state of this process after a context switch. Called by
+     * <tt>UThread.restoreState()</tt>.
+     */
+    public void restoreState() {
+	Machine.processor().setPageTable(pageTable);
+    }
+
+    /**
+     * Read a null-terminated string from this process's virtual memory. Read
+     * at most <tt>maxLength + 1</tt> bytes from the specified address, search
+     * for the null terminator, and convert it to a <tt>java.lang.String</tt>,
+     * without including the null terminator. If no null terminator is found,
+     * returns <tt>null</tt>.
+     *
+     * @param	vaddr	the starting virtual address of the null-terminated
+     *			string.
+     * @param	maxLength	the maximum number of characters in the string,
+     *				not including the null terminator.
+     * @return	the string read, or <tt>null</tt> if no null terminator was
+     *		found.
+     */
+    public String readVirtualMemoryString(int vaddr, int maxLength) {
+	Lib.assertTrue(maxLength >= 0);
+
+	byte[] bytes = new byte[maxLength+1];
+
+	int bytesRead = readVirtualMemory(vaddr, bytes);
+
+	for (int length=0; length<bytesRead; length++) {
+	    if (bytes[length] == 0)
+		return new String(bytes, 0, length);
+>>>>>>> 97d89e72f4fd326f4b75703c4c64b53834903364
 	}
 
 	/**
@@ -401,9 +478,19 @@ public class UserProcess {
 
 		Machine.halt();
 
+<<<<<<< HEAD
 		Lib.assertNotReached("Machine.halt() did not halt machine!");
 		return 0;
 	}
+=======
+	// and finally reserve 1 page for arguments
+	numPages++;
+	
+	int numPhysPages = Machine.processor().getNumPhysPages();
+	pageTable = new TranslationEntry[numPages];
+	for (int i=0; i<numPhysPages; i++)
+	    pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
+>>>>>>> 97d89e72f4fd326f4b75703c4c64b53834903364
 
 	private int handleCreate(int a0) {
 		String fileName = readVirtualMemoryString(a0, MAXSTRLEN);
@@ -659,6 +746,7 @@ public class UserProcess {
 	/** The program being run by this process. */
 	protected Coff coff;
 
+<<<<<<< HEAD
 	/** This process's page table. */
 	protected TranslationEntry[] pageTable;
 	/** The number of contiguous pages occupied by the program. */
@@ -687,3 +775,15 @@ public class UserProcess {
 	private FileDescriptor[] fds;
 
 }
+=======
+    /** The number of pages in the program's stack. */
+    protected final int stackPages = 8;
+    
+    private int initialPC, initialSP;
+    private int argc, argv;
+	
+    private static final int pageSize = Processor.pageSize;
+    private static final char dbgProcess = 'a';
+}
+
+>>>>>>> 97d89e72f4fd326f4b75703c4c64b53834903364

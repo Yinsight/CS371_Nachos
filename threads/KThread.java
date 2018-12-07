@@ -128,7 +128,12 @@ public class KThread {
 	else
 	    return 0;
     }
+<<<<<<< HEAD
     private static void joinTest1 () {
+=======
+	
+	private static void joinTest1 () {
+>>>>>>> 97d89e72f4fd326f4b75703c4c64b53834903364
     	KThread child1 = new KThread( new Runnable () {
     		public void run() {
     		    System.out.println("I (heart) Nachos!");
@@ -150,6 +155,10 @@ public class KThread {
     	System.out.println("is it? " + (child1.status == statusFinished));
     	Lib.assertTrue((child1.status == statusFinished), " Expected child1 to be finished.");
         }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 97d89e72f4fd326f4b75703c4c64b53834903364
 
     /**
      * Causes this thread to begin execution. The result is that two threads
@@ -221,8 +230,11 @@ public class KThread {
 		}
 	
 		sleep();
+<<<<<<< HEAD
 		
 	Machine.interrupt().restore(intStatus);
+=======
+>>>>>>> 97d89e72f4fd326f4b75703c4c64b53834903364
     }
 
     /**
@@ -304,6 +316,7 @@ public class KThread {
 	Lib.debug(dbgThread, "Joining to thread: " + toString());
 
 	Lib.assertTrue(this != currentThread);
+<<<<<<< HEAD
 	boolean intStatus=Machine.interrupt().disable();
 	
 	if(this.status!=statusFinished){
@@ -311,6 +324,15 @@ public class KThread {
 		currentThread.sleep();
 	}
 	Machine.interrupt().restore(intStatus);
+=======
+	Machine.interrupt().disable();
+	
+	if(this.status!=statusFinished){
+		this.whoWaitsForMe=currentThread;
+		currentThread.sleep();}
+	Machine.interrupt().enable();
+
+>>>>>>> 97d89e72f4fd326f4b75703c4c64b53834903364
     }
 
     /**
