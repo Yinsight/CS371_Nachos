@@ -533,6 +533,8 @@ public class UserProcess {
 		return handleRead(a0,a1,a2);
 	case syscallClose:
 		return handleClose(a0);
+	case syscallExit:
+		return handleExit(a0);
 
 	default:
 	    Lib.debug(dbgProcess, "Unknown syscall " + syscall);
@@ -542,7 +544,12 @@ public class UserProcess {
     }
     
 
-    /**
+    private int handleExit(int a0) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	/**
      * Handle a user exception. Called by
      * <tt>UserKernel.exceptionHandler()</tt>. The
      * <i>cause</i> argument identifies which exception occurred; see the
