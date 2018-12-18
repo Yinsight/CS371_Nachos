@@ -1,8 +1,15 @@
 package nachos.userprog;
 
+
 import nachos.machine.*;
 import nachos.threads.*;
 import nachos.userprog.*;
+
+import java.util.HashMap.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.LinkedList;
+import java.util.Stack;
 
 /**
  * A kernel that can support multiple user processes.
@@ -11,8 +18,12 @@ public class UserKernel extends ThreadedKernel {
     /**
      * Allocate a new user kernel.
      */
+	
     public UserKernel() {
 	super();
+	for(int i=0;i<Machine.processor().getNumPhysPages();i++){
+		freePages.put(i,0);
+	}
     }
 
     /**
@@ -61,6 +72,27 @@ public class UserKernel extends ThreadedKernel {
 	return ((UThread) KThread.currentThread()).process;
     }
 
+    public int getFreePage(){
+    	return getFreePages(1)[0];
+    	
+    }
+    
+    public int[] getFreePages(int numOfPages){
+    	
+    	int[] availablePage= new int[numOfPages];
+    	
+    	while(numOfPages>0){
+    		
+    		for(int i=0;i<Machine.processor().getNumPhysPages();i++){
+    			lock.acquire();
+    			availablePage[i]=freePages.get(i);
+    			numOfPages--;
+    			lock.release();
+    		}	
+    	}
+    	return availablePage;
+    	
+    }
     /**
      * The exception handler. This handler is called by the processor whenever
      * a user instruction causes a processor exception.
@@ -82,6 +114,8 @@ public class UserKernel extends ThreadedKernel {
 	process.handleException(cause);
     }
 
+    
+    
     /**
      * Start running user programs, by creating a process and running a shell
      * program in it. The name of the shell program it must run is returned by
@@ -109,7 +143,19 @@ public class UserKernel extends ThreadedKernel {
 
     /** Globally accessible reference to the synchronized console. */
     public static SynchConsole console;
-
+    
+    /*private static Stack<Integer> freePages = new Stack<Integer>();
+    static{
+    for(int i=0;i<Machine.processor().getNumPhysPages();i++){
+    	freePages.add(i);
+    }
+    }*/
+    
+    protected TranslationEntry[] pageTable;
+    //initialize hash-map
+    HashMap<Integer, Integer> freePages = new HashMap<Integer, Integer>();
+    final Lock lock = new Lock();
     // dummy variables to make javac smarter
     private static Coff dummy1 = null;
 }
+
