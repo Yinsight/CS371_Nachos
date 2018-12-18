@@ -23,10 +23,7 @@ public class UserProcess {
      * Allocate a new process.
      */
     public UserProcess() {
-	int numPhysPages = Machine.processor().getNumPhysPages();
-	pageTable = new TranslationEntry[numPhysPages];
-	for (int i=0; i<numPhysPages; i++)
-	    pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
+	
     }
     
     /**
@@ -249,6 +246,11 @@ public class UserProcess {
 
 	// and finally reserve 1 page for arguments
 	numPages++;
+	
+	int numPhysPages = Machine.processor().getNumPhysPages();
+	pageTable = new TranslationEntry[numPages];
+	for (int i=0; i<numPhysPages; i++)
+	    pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
 
 	if (!loadSections())
 	    return false;
@@ -447,3 +449,4 @@ public class UserProcess {
     private static final int pageSize = Processor.pageSize;
     private static final char dbgProcess = 'a';
 }
+
