@@ -77,21 +77,23 @@ public class UserKernel extends ThreadedKernel {
     	
     }
     
-    public int[] getFreePages(int numOfPages){
+    public static int[] getFreePages(int numOfPages){
     	
     	int[] availablePage= new int[numOfPages];
+    	int i=0;
     	
-    	while(numOfPages>0){
+    	while(i<Machine.processor().getNumPhysPages()&& numOfPages>0){
     		
-    		for(int i=0;i<Machine.processor().getNumPhysPages();i++){
+    		
     			lock.acquire();
     			if(freePages.containsKey(i)){
     			availablePage[numOfPages]=i;
     			freePages.remove(i);
     			numOfPages--;
     			}
+    			i++;
     			lock.release();
-    		}	
+    		
     	}
     	return availablePage;
     	
@@ -99,7 +101,9 @@ public class UserKernel extends ThreadedKernel {
     
     public void free(int A[]){
     	for(int i=0;i<A.length;i++){
+    		Machine.interrupt().disable();
     		freePages.put(A[i],0);
+    		Machine.interrupt().enable();
     	}
     }
     /**
@@ -160,10 +164,10 @@ public class UserKernel extends ThreadedKernel {
     }
     }*/
     
-    protected TranslationEntry[] pageTable;
+    //protected TranslationEntry[] pageTable;
     //initialize hash-map
-    HashMap<Integer, Integer> freePages = new HashMap<Integer, Integer>();
-    final Lock lock = new Lock();
+    static HashMap<Integer, Integer> freePages = new HashMap<Integer, Integer>();
+    static final Lock lock = new Lock();
     // dummy variables to make javac smarter
     private static Coff dummy1 = null;
 }
