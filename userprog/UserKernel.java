@@ -99,7 +99,7 @@ public class UserKernel extends ThreadedKernel {
     	
     }
     
-    public void free(int A[]){
+    public static void free(int A[]){
     	for(int i=0;i<A.length;i++){
     		Machine.interrupt().disable();
     		freePages.put(A[i],0);
